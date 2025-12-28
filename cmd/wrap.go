@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"log"
 	"ctrz/proc"
+	"ctrz/cgroup"
 
 	"github.com/spf13/cobra"
 )
@@ -21,6 +22,11 @@ var wrapCmd = &cobra.Command{
 			log.Fatal(err)			
 		}
 		fmt.Println(info.String())
+
+		err = cgroup.CreateAndAttach(pid, "20000 100000")
+		if err != nil {
+			panic(err)
+		}
     },
 }
 
