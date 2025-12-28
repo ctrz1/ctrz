@@ -7,8 +7,7 @@ import (
 )
 
 func CreateAndAttach(pid int, cpuMax string) error {
-	base := "/sys/fs/cgroup"
-	group := filepath.Join(base, fmt.Sprintf("ctrz-%d", pid))
+	group := PathForPID(pid)
 
 	if err := os.Mkdir(group, 0755); err != nil && !os.IsExist(err) {
 		return err
