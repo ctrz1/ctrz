@@ -1,14 +1,15 @@
 package cmd
 
 import (
+	"bytes"
 	"fmt"
 	"log"
-	"time"
-	"bytes"
-    "math"
+	"math"
 	"strings"
+	"time"
 
 	"ctrz/cgroup"
+	"ctrz/network"
 
 	"github.com/spf13/cobra"
 )
@@ -60,6 +61,19 @@ var statusCmd = &cobra.Command{
 					} else {
 						fmt.Fprintf(&buf, "  max:     %d KB\n", mem.Max/1024)
 					}
+				}
+			}
+
+			sockets, err := network.ResolveSockets(pid)
+			if err != nil {
+				fmt.Fprintf(&buf, "Network: error reading stats: %v\n\n", err)
+			} else {
+				for _, s := range sockets {
+					fmt.Fprintf(&buf, "  Local Address:      %s\n", s.LocalAddr)
+					fmt.Fprintf(&buf, "  Remote Address:      %s\n", s.RemoteAddr)
+					fmt.Fprintf(&buf, "  Protocol:      %s\n", s.Proto)
+					fmt.Fprintf(&buf, "  State:      %s\n", s.State)
+					fmt.Fprintf(&buf, "  Inode:      %d\n", s.Inode)
 				}
 			}
 		
