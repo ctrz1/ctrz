@@ -43,9 +43,9 @@ var statusCmd = &cobra.Command{
 					fmt.Fprintf(&buf, "CPU: error reading stats: %v\n\n", err)
 				} else {
 					buf.WriteString("CPU:\n")
-					fmt.Fprintf(&buf, "  usage_usec:      %d\n", cpu.UsageUsec)
-					fmt.Fprintf(&buf, "  nr_throttled:    %d\n", cpu.NrThrottled)
-					fmt.Fprintf(&buf, "  throttled_usec: %d\n\n", cpu.ThrottledUsec)
+					fmt.Fprintf(&buf, "  usage_usec:		%d\n", cpu.UsageUsec)
+					fmt.Fprintf(&buf, "  nr_throttled:		%d\n", cpu.NrThrottled)
+					fmt.Fprintf(&buf, "  throttled_usec:	%d\n\n", cpu.ThrottledUsec)
 				}
 			}
 		
@@ -55,11 +55,11 @@ var statusCmd = &cobra.Command{
 					fmt.Fprintf(&buf, "Memory: error reading stats: %v\n", err)
 				} else {
 					buf.WriteString("Memory:\n")
-					fmt.Fprintf(&buf, "  current: %d KB\n", mem.Current/1024)
+					fmt.Fprintf(&buf, "  current:			%d KB\n", mem.Current/1024)
 					if mem.Max > math.MaxInt64-1024 || mem.Max == 0 {
 						buf.WriteString("  max:     unlimited\n")
 					} else {
-						fmt.Fprintf(&buf, "  max:     %d KB\n", mem.Max/1024)
+						fmt.Fprintf(&buf, "  max:			%d KB\n", mem.Max/1024)
 					}
 				}
 			}
@@ -68,12 +68,14 @@ var statusCmd = &cobra.Command{
 			if err != nil {
 				fmt.Fprintf(&buf, "Network: error reading stats: %v\n\n", err)
 			} else {
+				buf.WriteString("Network:\n")
 				for _, s := range sockets {
-					fmt.Fprintf(&buf, "  Local Address:      %s\n", s.LocalAddr)
-					fmt.Fprintf(&buf, "  Remote Address:      %s\n", s.RemoteAddr)
-					fmt.Fprintf(&buf, "  Protocol:      %s\n", s.Proto)
-					fmt.Fprintf(&buf, "  State:      %s\n", s.State)
-					fmt.Fprintf(&buf, "  Inode:      %d\n", s.Inode)
+					fmt.Fprintf(&buf, "  Local Address:     	%s\n", s.LocalAddr)
+					fmt.Fprintf(&buf, "  Remote Address:    	%s\n", s.RemoteAddr)
+					fmt.Fprintf(&buf, "  Protocol:      	%s\n", s.Proto)
+					fmt.Fprintf(&buf, "  State:      		%s\n", s.State)
+					fmt.Fprintf(&buf, "  Inode:      		%d\n", s.Inode)
+					buf.WriteString("\n")
 				}
 			}
 		

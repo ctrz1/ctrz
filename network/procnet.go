@@ -12,6 +12,11 @@ func ParseProcNet(path, proto string) (map[uint64]NetSocket, error) {
 		return nil, err
 	}
 
+	ipV6 := false
+	if (proto == "tcp6" || proto == "udp6") {
+		ipV6 = true
+	}
+
 	lines := strings.Split(string(data), "\n")
 	sockets := make(map[uint64]NetSocket)
 
@@ -21,13 +26,25 @@ func ParseProcNet(path, proto string) (map[uint64]NetSocket, error) {
 			continue
 		}
 
-		inode, _ := strconv.ParseUint(fields[9], 10, 64)
+		inode, err := strconv.ParseUint(fields[9], 10, 64)
+		if err != nil {
+			inode = 0
+		}
+
+		remoteAddr, err := ParseProcNetAddr(fields[1], ipV6)
+		if err != nil {
+			remoteAddr = fields[1]
+		}
+		localAddr, err := ParseProcNetAddr(fields[2], ipV6)
+		if err != nil {
+			localAddr = fields[2]
+		}
 
 		sockets[inode] = NetSocket{
 			Inode:      inode,
 			Proto:      proto,
-			LocalAddr:  fields[1],
-			RemoteAddr: fields[2],
+			LocalAddr:  localAddr,
+			RemoteAddr: remoteAddr,
 			State:      tcpState(fields[3]),
 		}
 	}
