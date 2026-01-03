@@ -2,7 +2,6 @@ package network
 
 import (
 	"fmt"
-	"log"
 	"os"
 	"path/filepath"
 	"strconv"
@@ -15,13 +14,10 @@ func ResolveSockets(pid int) ([]NetSocket, error) {
 		return nil, err
 	}
 
-	tcp, err := ParseProcNet("/proc/net/tcp", "tcp")
-	if err != nil {
-		log.Fatal(err)
-	}
-	tcp6, _ := ParseProcNet("/proc/net/tcp6", "tcp6")
-	udp, _ := ParseProcNet("/proc/net/udp", "udp")
-	udp6, _ := ParseProcNet("/proc/net/udp6", "udp6")
+	tcp, _ := ParseProcNet("/proc/net/tcp", "tcp", pid)
+	tcp6, _ := ParseProcNet("/proc/net/tcp6", "tcp6", pid)
+	udp, _ := ParseProcNet("/proc/net/udp", "udp", pid)
+	udp6, _ := ParseProcNet("/proc/net/udp6", "udp6", pid)
 
 	index := map[uint64]NetSocket{}
 	for _, m := range []map[uint64]NetSocket{tcp, tcp6, udp, udp6} {

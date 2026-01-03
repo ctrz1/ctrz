@@ -1,16 +1,16 @@
 package network
 
-import(
+import (
 	"net"
 )
 
 type TCPSocket struct {
-	LocalIP   net.IP
-	LocalPort uint16
-	RemoteIP net.IP
+	LocalIP    net.IP
+	LocalPort  uint16
+	RemoteIP   net.IP
 	RemotePort uint16
-	State     string
-	Inode     uint64
+	State      string
+	Inode      uint64
 }
 
 type SocketFD struct {
@@ -19,10 +19,11 @@ type SocketFD struct {
 }
 
 type NetSocket struct {
-	Inode       uint64
-	Proto       string // tcp, tcp6, udp, udp6
-	LocalAddr   string
-	RemoteAddr  string
-	State       string
+	Inode      uint64
+	Proto      string // tcp, tcp6, udp, udp6
+	LocalAddr  string
+	RemoteAddr string
+	State      string
+	SentBytes  string
+	ReceivedBytes   string
 }
-

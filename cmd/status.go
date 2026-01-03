@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 	"math"
+	"strconv"
 	"strings"
 	"time"
 
@@ -33,6 +34,8 @@ var statusCmd = &cobra.Command{
 		fmt.Print("\033[s") // Save cursor position
 
 		var lastLines int
+		var prevRecBytes uint64 = 0
+		var prevSentBytes uint64 = 0
 
 		for {
 			var buf bytes.Buffer
@@ -68,15 +71,32 @@ var statusCmd = &cobra.Command{
 			if err != nil {
 				fmt.Fprintf(&buf, "Network: error reading stats: %v\n\n", err)
 			} else {
+				currentSent, err := strconv.ParseUint(sockets[0].ReceivedBytes, 10, 64)
+				if err != nil {
+					
+				}
+				currentReceived, err := strconv.ParseUint(sockets[0].SentBytes, 10, 64)
+				if err != nil {
+					
+				}
+				deltaSent := currentSent - prevSentBytes
+				deltaReceived := currentReceived - prevRecBytes
 				buf.WriteString("Network:\n")
+				fmt.Fprintf(&buf, "  Total Connections:		%d\n", len(sockets))
+				fmt.Fprintf(&buf, "  Network traffic (namespace level):\n")
+				fmt.Fprintf(&buf, "    Bytes Received:    	%s/second (%s total)\n", convertBytesToFittingUnit(deltaReceived), convertBytesToFittingUnit(currentReceived))
+				fmt.Fprintf(&buf, "    Bytes Sent:     	%s/second (%s total)\n\n", convertBytesToFittingUnit(deltaSent), convertBytesToFittingUnit(currentSent))
 				for _, s := range sockets {
-					fmt.Fprintf(&buf, "  Local Address:     	%s\n", s.LocalAddr)
-					fmt.Fprintf(&buf, "  Remote Address:    	%s\n", s.RemoteAddr)
-					fmt.Fprintf(&buf, "  Protocol:      	%s\n", s.Proto)
-					fmt.Fprintf(&buf, "  State:      		%s\n", s.State)
+					if s.State == "LISTEN" {
+						fmt.Fprintf(&buf, "  %s %s %s\n",s.State, s.Proto, s.RemoteAddr)
+					}else {
+						fmt.Fprintf(&buf, "  %s %s %s -> %s\n",s.State, s.Proto, s.LocalAddr, s.RemoteAddr)
+					}
 					fmt.Fprintf(&buf, "  Inode:      		%d\n", s.Inode)
 					buf.WriteString("\n")
 				}
+				prevRecBytes = currentReceived
+				prevSentBytes = currentSent
 			}
 		
 			output := buf.String()
@@ -102,4 +122,18 @@ func moveCursorUp(n int) {
 	if n > 0 {
 		fmt.Printf("\033[%dA", n)
 	}
+}
+
+func convertBytesToFittingUnit(b uint64) string {
+	const unit = 1024
+	if b < unit {
+		return fmt.Sprintf("%d B", b)
+	}
+	div, exp := uint64(unit), 0
+	for n := b / unit; n >= unit; n /= unit {
+		div *= unit
+		exp++
+	}
+	return fmt.Sprintf("%.1f %cB",
+		float64(b)/float64(div), "KMGTPE"[exp])
 }
