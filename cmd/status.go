@@ -17,7 +17,7 @@ import (
 
 var statusCmd = &cobra.Command{
 	Use:   "status",
-	Short: "Show live resource usage of a wrapped process",
+	Short: "Show live resource usage of a process",
 	Run: func(cmd *cobra.Command, args []string) {
 		pid, err := cmd.Flags().GetInt("pid")
 		if err != nil {
