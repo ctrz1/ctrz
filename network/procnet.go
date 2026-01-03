@@ -41,7 +41,15 @@ func ParseProcNet(path, proto string, pid int) (map[uint64]NetSocket, error) {
 			localAddr = fields[2]
 		}
 
-		bytesReceived, bytesSent, err := ParseProcPIDDev(pid)
+		iface, err := ParseProcPIDDev(pid)
+
+		var bytesSent uint64 = 0
+		var bytesReceived uint64 = 0
+		for _, v := range iface {
+			ifaceName := v.Name
+			bytesSent += iface[ifaceName].SentBytes
+			bytesReceived += iface[ifaceName].ReceivedBytes
+		}
 
 		sockets[inode] = NetSocket{
 			Inode:         inode,
@@ -49,29 +57,47 @@ func ParseProcNet(path, proto string, pid int) (map[uint64]NetSocket, error) {
 			LocalAddr:     localAddr,
 			RemoteAddr:    remoteAddr,
 			State:         tcpState(fields[3]),
-			SentBytes:     bytesSent,
-			ReceivedBytes: bytesReceived,
+			SentBytes:     strconv.FormatUint(bytesSent, 10),
+			ReceivedBytes: strconv.FormatUint(bytesReceived, 10),
 		}
 	}
 
 	return sockets, nil
 }
 
-func ParseProcPIDDev(pid int) (bytesReceived string, bytesSent string, err error) {
+func ParseProcPIDDev(pid int) (map[string]Interface, error) {
 	path := fmt.Sprintf("/proc/%d/net/dev", pid)
 	data, err := os.ReadFile(path)
 	if err != nil {
-		return "", "", err
+		return nil, err
 	}
+
+	iface := make(map[string]Interface)
 	lines := strings.Split(string(data), "\n")
+
 	for _, line := range lines[1:] {
 		fields := strings.Fields(line)
-		if len(fields) < 17 || fields[0] != "eth0:" {
+		if len(fields) < 17 {
 			continue
 		}
-		return fields[1], fields[9], nil
+		bytesSent, err := strconv.ParseUint(fields[9], 10, 64)
+		if err != nil {
+			fmt.Println(err)
+			bytesSent = 0
+		}
+		bytesReceived, err := strconv.ParseUint(fields[1], 10, 64)
+		if err != nil {
+			fmt.Println(err)
+			bytesReceived = 0
+		}
+		ifaceName := strings.Trim(fields[0], ":")
+		iface[ifaceName] = Interface{
+			Name: ifaceName,
+			ReceivedBytes: bytesReceived,
+			SentBytes: bytesSent,
+		}
 	}
-	return "", "", fmt.Errorf("error parsing traffic")
+	return iface, nil
 }
 
 func tcpState(hex string) string {

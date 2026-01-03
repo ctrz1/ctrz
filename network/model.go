@@ -19,11 +19,17 @@ type SocketFD struct {
 }
 
 type NetSocket struct {
-	Inode      uint64
-	Proto      string // tcp, tcp6, udp, udp6
-	LocalAddr  string
-	RemoteAddr string
-	State      string
-	SentBytes  string
-	ReceivedBytes   string
+	Inode         uint64
+	Proto         string // tcp, tcp6, udp, udp6
+	LocalAddr     string
+	RemoteAddr    string
+	State         string
+	SentBytes     string
+	ReceivedBytes string
+}
+
+type Interface struct {
+	Name          string
+	SentBytes     uint64
+	ReceivedBytes uint64
 }
