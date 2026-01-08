@@ -11,7 +11,7 @@ import (
 	"syscall"
 )
 
-func CreateNetNs(command []string, detach bool, maxCpu string) error {
+func CreateNetNs(command []string, detach bool, maxCpu string) (int, error) {
 	args := append([]string{"__ctrz_init"}, command...)
 
 	cmd := exec.Command("/proc/self/exe", args...)
@@ -28,7 +28,7 @@ func CreateNetNs(command []string, detach bool, maxCpu string) error {
 
 	err := cmd.Start()
 	if err != nil {
-		return err
+		return 0, err
 	}
 
 	pid := cmd.Process.Pid
@@ -36,11 +36,11 @@ func CreateNetNs(command []string, detach bool, maxCpu string) error {
 
 	err = cgroup.CreateAndAttach(pid, maxCpu)
 	if err != nil {
-		return err
+		return pid, err
 	}
 	if !detach {
-		return cmd.Wait()
+		return pid, cmd.Wait()
 	}
-	return nil
+	return pid, nil
 }
 

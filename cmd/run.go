@@ -4,6 +4,7 @@
 package cmd
 
 import (
+	"ctrz/misc"
 	"ctrz/network"
 	"fmt"
 	"log"
@@ -25,6 +26,10 @@ var runCmd = &cobra.Command{
 		if err != nil {
 			log.Fatal("error retrieving --detach (-d). Setting value to default (false): ", err)
 			detach = false
+		}
+		name, err := cmd.Flags().GetString("name")
+		if err != nil {
+			log.Fatal("error retrieving --name. Value not set", err)
 		}
 
 		period, err := cmd.Flags().GetInt("period")
@@ -55,9 +60,16 @@ var runCmd = &cobra.Command{
 				log.Fatal("At least one command must be provided")
 				os.Exit(1)
 			}
-			err = network.CreateNetNs(args, detach, maxCpu)
+			pid, err := network.CreateNetNs(args, detach, maxCpu)
 			if err != nil {
 				log.Fatal(err)
+				os.Exit(1)
+			}
+			if !detach {
+				fmt.Println(maxCpu)
+			}
+			if name != "" {
+				misc.AttachNameToPID(pid, name)
 			}
 		}
 	},
@@ -70,6 +82,7 @@ func init() {
 	runCmd.Flags().Int("cpu", 100, "Limits the CPU usage (in %) of the wrapped process")
 	runCmd.Flags().Int("runtime", 0, "Configures the runtime of a process within a cgroup")
 	runCmd.Flags().Int("period", 0, "Determines the time window in which to apply the runtime")
+	runCmd.Flags().String("name", "", "name of new container")
 	runCmd.MarkFlagsRequiredTogether("runtime", "period")
 	runCmd.MarkFlagsMutuallyExclusive("cpu", "runtime")
 }
