@@ -65,11 +65,11 @@ var runCmd = &cobra.Command{
 				log.Fatal(err)
 				os.Exit(1)
 			}
-			if !detach {
-				fmt.Println(maxCpu)
-			}
 			if name != "" {
-				misc.AttachNameToPID(pid, name)
+				err = misc.AttachNameToPID(pid, name, args)
+				if err != nil {
+					log.Fatal(err)
+				}
 			}
 		}
 	},

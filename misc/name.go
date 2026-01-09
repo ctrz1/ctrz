@@ -1,23 +1,43 @@
 package misc
 
 import (
+	"ctrz/cgroup"
 	"encoding/json"
 	"fmt"
-	"log"
 	"os"
 	"path/filepath"
 )
 
-func AttachNameToPID(pid int, name string) error {
+//TODO:
+/**
+1. Make names unique --> if a name is chosen again, check if the process is stale or not (either replace process or throw an error)
+	- Check if /proc/<pid> exists
+	- Compare StartTime from /var/lib/ctrz/containers/xyz.json to /proc/<pid>/stat
+2. Implement cleanup ('rm' command)
+3. Integrate names into status & wrap command
+4. Implement a 'ps' command showing active processes
+**/
+
+func AttachNameToPID(pid int, name string, args []string) error {
 	path, err := ctrzStateDir()
 	if err != nil {
-		return err
+		return fmt.Errorf("Error attaching name to PID: %v", err)
 	}
-	os.Mkdir(filepath.Join(path, "containers"), 0755)
-	// TODO: Expand on metadata here
+	err = os.MkdirAll(filepath.Join(path, "containers"), 0755)
+	if err != nil {
+		return fmt.Errorf("Error attaching name to PID: %v", err)
+	}
+	// TODO: Include process start time here
+	var command string
+	for _, v := range args {
+		command += fmt.Sprintf("%s ", v)
+	}
+	cgroup := cgroup.PathForPID(pid)
 	meta := ContainerMeta {
 		PID: pid,
 		Name: name,
+		Command: command,
+		Cgroup: cgroup,
 	}
 	metaJson, err := json.Marshal(meta)
 	fmt.Printf("%v\n", string(metaJson))
@@ -27,14 +47,14 @@ func AttachNameToPID(pid int, name string) error {
 	}
 	err = os.WriteFile(filepath.Join(path, "containers", fmt.Sprintf("%s.json", name)), metaJson, 0644)
 	if err != nil {
-		log.Fatal(err)
+		return fmt.Errorf("Error attaching name to PID: %v", err)
 	}
 	return nil
 }
 
 func ctrzStateDir() (string, error) {
 	if os.Geteuid() == 0 {
-		return filepath.Join("var", "lib", "ctrz"), nil
+		return filepath.Join("/var", "lib", "ctrz"), nil
 	}
 	home, err := os.UserHomeDir()
 	if err != nil {
