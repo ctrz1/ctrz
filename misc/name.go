@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"strings"
 )
 
 //TODO:
@@ -32,6 +33,7 @@ func AttachNameToPID(pid int, name string, args []string) error {
 	for _, v := range args {
 		command += fmt.Sprintf("%s ", v)
 	}
+	command = strings.Trim(command, " ")
 	cgroup := cgroup.PathForPID(pid)
 	meta := ContainerMeta {
 		PID: pid,

@@ -96,6 +96,7 @@ func ParseProcPIDDev(pid int) (map[string]Interface, error) {
 			ReceivedBytes: bytesReceived,
 			SentBytes: bytesSent,
 		}
+		//fmt.Printf("Name: %s, Received: %d, Sent: %d", ifaceName, bytesReceived, bytesSent)
 	}
 	return iface, nil
 }

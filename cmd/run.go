@@ -9,6 +9,7 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"syscall"
 
 	"github.com/spf13/cobra"
 )
@@ -55,21 +56,33 @@ var runCmd = &cobra.Command{
 			maxCpu = fmt.Sprintf("%d 100000", quota)
 		}
 		if netns {
-			fmt.Println("Let's create a new network namespace")
 			if len(args) < 1 {
 				log.Fatal("At least one command must be provided")
 				os.Exit(1)
 			}
-			pid, err := network.CreateNetNs(args, detach, maxCpu)
+			pid, cmd, err := network.CreateNetNs(args, maxCpu)
 			if err != nil {
 				log.Fatal(err)
 				os.Exit(1)
+			}
+			if err := network.SetupVeth(pid); err != nil {
+				log.Fatal(err)
+				os.Exit(1)
+			}
+			if err := syscall.Kill(pid, syscall.SIGCONT); err != nil {
+				log.Fatal(err)
 			}
 			if name != "" {
 				err = misc.AttachNameToPID(pid, name, args)
 				if err != nil {
 					log.Fatal(err)
 				}
+			}
+			if !detach {
+				cmd.Stdin = os.Stdin
+				cmd.Stdout = os.Stdout
+				cmd.Stderr = os.Stderr
+				cmd.Wait()
 			}
 		}
 	},

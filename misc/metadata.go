@@ -1,9 +1,9 @@
 package misc
 
 type ContainerMeta struct {
-	PID       int
-	Name      string
-	StartTime int64
-	Command   string
-	Cgroup    string
+	PID       int    `json:"pid"`
+	Name      string `json:"name"`
+	StartTime int64  `json:"startTime,omitempty"`
+	Command   string `json:"command"`
+	Cgroup    string `json:"cgroup"`
 }

@@ -33,3 +33,8 @@ type Interface struct {
 	SentBytes     uint64
 	ReceivedBytes uint64
 }
+
+type VethPair struct {
+	containerInterface string
+	HostInterface      string
+}

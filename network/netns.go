@@ -1,34 +1,25 @@
-//go:build linux
-// +build linux
-
 package network
 
 import (
 	"ctrz/cgroup"
 	"fmt"
-	"os"
 	"os/exec"
 	"syscall"
 )
 
-func CreateNetNs(command []string, detach bool, maxCpu string) (int, error) {
+func CreateNetNs(command []string, maxCpu string) (int, *exec.Cmd, error) {
 	args := append([]string{"__ctrz_init"}, command...)
 
 	cmd := exec.Command("/proc/self/exe", args...)
 
-	if !detach {
-		cmd.Stdin = os.Stdin
-		cmd.Stdout = os.Stdout
-		cmd.Stderr = os.Stderr
-	}
-
 	cmd.SysProcAttr = &syscall.SysProcAttr{
 		Cloneflags: syscall.CLONE_NEWNET,
 	}
+	//cmd.Env = append(os.Environ(), "CTRZ_NET_READY=0")
 
 	err := cmd.Start()
 	if err != nil {
-		return 0, err
+		return 0, nil, err
 	}
 
 	pid := cmd.Process.Pid
@@ -36,11 +27,24 @@ func CreateNetNs(command []string, detach bool, maxCpu string) (int, error) {
 
 	err = cgroup.CreateAndAttach(pid, maxCpu)
 	if err != nil {
-		return pid, err
+		return pid, nil, err
 	}
-	if !detach {
-		return pid, cmd.Wait()
-	}
-	return pid, nil
+	
+	return pid, cmd, nil
 }
 
+func SetupNetns() error {
+	if out, err := exec.Command("ip", "link", "set", "lo", "up").CombinedOutput(); err != nil {
+		return fmt.Errorf("ip link set lo up failed: %v: %s", err, out)
+	}
+	if out, err := exec.Command("ip", "addr", "add", "10.200.1.2/24", "dev", "ctrz0").CombinedOutput(); err != nil {
+		return fmt.Errorf("ip addr add 10.200.1.2/24 dev ctrz0 failed: %v: %s", err, out)
+	}
+	if out, err := exec.Command("ip", "link", "set", "ctrz0", "up").CombinedOutput(); err != nil {
+		return fmt.Errorf("ip link set ctrz0 up failed: %v: %s", err, out)
+	}
+	if out, err := exec.Command("ip", "route", "add", "default", "via", "10.200.1.1").CombinedOutput(); err != nil {
+		return fmt.Errorf("ip route add default via 10.200.1.1 failed: %v: %s", err, out)
+	}
+	return nil
+}

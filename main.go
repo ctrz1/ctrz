@@ -2,10 +2,10 @@ package main
 
 import (
 	"ctrz/cmd"
+	"ctrz/network"
 	"fmt"
 	"log"
 	"os"
-	"os/exec"
 	"syscall"
 )
 
@@ -19,7 +19,10 @@ func main() {
 }
 
 func ctrzInit() {
-	err := exec.Command("ip", "link", "set", "lo", "up").Run()
+	if err := syscall.Kill(os.Getpid(), syscall.SIGSTOP); err != nil {
+		log.Fatal(err)
+	}
+	err := network.SetupNetns()
 	if err != nil {
 		log.Fatal("run failed: ", err)
 	}
