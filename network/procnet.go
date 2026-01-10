@@ -7,8 +7,9 @@ import (
 	"strings"
 )
 
-func ParseProcNet(path, proto string, pid int) (map[uint64]NetSocket, error) {
-	data, err := os.ReadFile(path)
+func ParseProcNet(proto string, pid int) (map[uint64]NetSocket, error) {
+	file := fmt.Sprintf("/proc/%d/net/%s", pid, proto)
+	data, err := os.ReadFile(file)
 	if err != nil {
 		return nil, err
 	}

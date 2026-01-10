@@ -14,10 +14,10 @@ func ResolveSockets(pid int) ([]NetSocket, error) {
 		return nil, err
 	}
 
-	tcp, _ := ParseProcNet("/proc/net/tcp", "tcp", pid)
-	tcp6, _ := ParseProcNet("/proc/net/tcp6", "tcp6", pid)
-	udp, _ := ParseProcNet("/proc/net/udp", "udp", pid)
-	udp6, _ := ParseProcNet("/proc/net/udp6", "udp6", pid)
+	tcp, _ := ParseProcNet("tcp", pid)
+	tcp6, _ := ParseProcNet("tcp6", pid)
+	udp, _ := ParseProcNet("udp", pid)
+	udp6, _ := ParseProcNet("udp6", pid)
 
 	index := map[uint64]NetSocket{}
 	for _, m := range []map[uint64]NetSocket{tcp, tcp6, udp, udp6} {
