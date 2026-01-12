@@ -32,6 +32,10 @@ var runCmd = &cobra.Command{
 		if err != nil {
 			log.Fatal("error retrieving --name. Value not set", err)
 		}
+		pm, err := cmd.Flags().GetStringArray("port") 
+		if err != nil {
+			log.Fatal("error retrieving --port (-p). Value not set", err)
+		}
 
 		period, err := cmd.Flags().GetInt("period")
 		if err != nil {
@@ -56,6 +60,7 @@ var runCmd = &cobra.Command{
 			maxCpu = fmt.Sprintf("%d 100000", quota)
 		}
 		if netns {
+			containerIP := "10.200.1.2"
 			if len(args) < 1 {
 				log.Fatal("At least one command must be provided")
 				os.Exit(1)
@@ -71,6 +76,18 @@ var runCmd = &cobra.Command{
 			}
 			if err := syscall.Kill(pid, syscall.SIGCONT); err != nil {
 				log.Fatal(err)
+			}
+			if err := network.DenyAllElse(containerIP); err != nil {
+				log.Fatal(err)
+			}
+			for _, p := range pm {
+				hostPort, containerPort, err := network.ExposePort(p, containerIP) 
+				if err != nil {
+					log.Fatal(err)
+				}
+				if err := network.Userland("tcp", containerIP, hostPort, containerPort); err != nil {
+					log.Fatal(err)
+				}
 			}
 			if name != "" {
 				err = misc.AttachNameToPID(pid, name, args)
@@ -96,6 +113,7 @@ func init() {
 	runCmd.Flags().Int("runtime", 0, "Configures the runtime of a process within a cgroup")
 	runCmd.Flags().Int("period", 0, "Determines the time window in which to apply the runtime")
 	runCmd.Flags().String("name", "", "name of new container")
+	runCmd.Flags().StringArrayP("port", "p", []string{}, "Map host port to container port with '<host-port>:<container-port>'")
 	runCmd.MarkFlagsRequiredTogether("runtime", "period")
 	runCmd.MarkFlagsMutuallyExclusive("cpu", "runtime")
 }

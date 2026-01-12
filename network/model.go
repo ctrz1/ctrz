@@ -35,6 +35,11 @@ type Interface struct {
 }
 
 type VethPair struct {
-	containerInterface string
+	ContainerInterface string
 	HostInterface      string
+}
+
+type PortMapping struct {
+	HostPort      int
+	ContainerPort int
 }
