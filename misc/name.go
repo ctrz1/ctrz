@@ -4,6 +4,8 @@ import (
 	"ctrz/cgroup"
 	"encoding/json"
 	"fmt"
+	"log"
+	"math/rand"
 	"os"
 	"path/filepath"
 	"strings"
@@ -19,7 +21,7 @@ import (
 4. Implement a 'ps' command showing active processes
 **/
 
-func AttachNameToPID(pid int, name string, args []string) error {
+func AttachNameToPID(pid int, name string, args []string, containerIP string, containerPort []int, hostPort []int) error {
 	path, err := ctrzStateDir()
 	if err != nil {
 		return fmt.Errorf("Error attaching name to PID: %v", err)
@@ -40,6 +42,9 @@ func AttachNameToPID(pid int, name string, args []string) error {
 		Name: name,
 		Command: command,
 		Cgroup: cgroup,
+		ContainerIP: containerIP,
+		ContainerPort: containerPort,
+		HostPort: hostPort,
 	}
 	metaJson, err := json.Marshal(meta)
 	fmt.Printf("%v\n", string(metaJson))
@@ -68,4 +73,20 @@ func ctrzStateDir() (string, error) {
 
 func GetPIDFromName(name string) (int, error){
 	return 0, nil
+}
+
+func CheckContName(name string) bool {
+	path, err := ctrzStateDir()
+	if err != nil {
+		log.Fatalf("Error attaching name to PID: %v", err)
+	}
+	if _, err := os.Stat(filepath.Join(path, "containers", fmt.Sprintf("%s.json", name))); err == nil {
+		return false
+	}
+	return true
+}
+
+func GenerateRandomContName() string {
+	randId := rand.Int()
+	return fmt.Sprintf("ctrz-%d", randId)
 }

@@ -101,11 +101,9 @@ func ExposePort(ports string, containerIP string) (int, int, error) {
 	}
 
 	for _, c := range cmds {
-		fmt.Printf("Executing: %v\n", c)
 		out, err := exec.Command(c[0], c[1:]...).CombinedOutput()
-		fmt.Printf("Command output: %s\n", string(out)) 
 		if err != nil {
-			return -1, -1, err
+			return -1, -1, fmt.Errorf("%v: %s", err, out)
 		}
 	}
 	return pm.HostPort, pm.ContainerPort, nil

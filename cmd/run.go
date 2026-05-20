@@ -32,6 +32,17 @@ var runCmd = &cobra.Command{
 		if err != nil {
 			log.Fatal("error retrieving --name. Value not set", err)
 		}
+		if name == "" {
+			name = misc.GenerateRandomContName()
+			for ; !misc.CheckContName(name); {
+				name = misc.GenerateRandomContName()
+			}
+			fmt.Printf("Container name: %s\n", name)
+		} else {
+			if !misc.CheckContName(name) {
+				log.Fatalf("Container '%s' already exists. Either chose a different name or remove the existing container", name)
+			}
+		}
 		pm, err := cmd.Flags().GetStringArray("port") 
 		if err != nil {
 			log.Fatal("error retrieving --port (-p). Value not set", err)
@@ -80,20 +91,25 @@ var runCmd = &cobra.Command{
 			if err := network.DenyAllElse(containerIP); err != nil {
 				log.Fatal(err)
 			}
+			var hostPorts []int
+			var containerPorts []int
 			for _, p := range pm {
 				hostPort, containerPort, err := network.ExposePort(p, containerIP) 
 				if err != nil {
 					log.Fatal(err)
 				}
-				if err := network.Userland("tcp", containerIP, hostPort, containerPort); err != nil {
-					log.Fatal(err)
-				}
+				go func(hp, cp int) {
+    			    if err := network.Userland("tcp", containerIP, hp, cp); err != nil {
+    			        log.Printf("proxy %d:%d failed: %v", hp, cp, err)
+    			    }
+    			}(hostPort, containerPort)
+
+				hostPorts = append(hostPorts, hostPort)
+				containerPorts = append(containerPorts, containerPort)
 			}
-			if name != "" {
-				err = misc.AttachNameToPID(pid, name, args)
-				if err != nil {
-					log.Fatal(err)
-				}
+			err = misc.AttachNameToPID(pid, name, args, containerIP, containerPorts, hostPorts)
+			if err != nil {
+				log.Fatal(err)
 			}
 			if !detach {
 				cmd.Stdin = os.Stdin
@@ -101,6 +117,7 @@ var runCmd = &cobra.Command{
 				cmd.Stderr = os.Stderr
 				cmd.Wait()
 			}
+			select{}
 		}
 	},
 }

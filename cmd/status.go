@@ -86,13 +86,19 @@ var statusCmd = &cobra.Command{
 				fmt.Fprintf(&buf, "  Network traffic (namespace level):\n")
 				fmt.Fprintf(&buf, "    Bytes Received:    	%s/second (%s total)\n", convertBytesToFittingUnit(deltaReceived), convertBytesToFittingUnit(currentReceived))
 				fmt.Fprintf(&buf, "    Bytes Sent:     	%s/second (%s total)\n\n", convertBytesToFittingUnit(deltaSent), convertBytesToFittingUnit(currentSent))
-				for _, s := range sockets {
+				connections:
+				for i, s := range sockets{
 					if s.State == "LISTEN" {
 						fmt.Fprintf(&buf, "  %s %s %s\n",s.State, s.Proto, s.RemoteAddr)
 					}else {
 						fmt.Fprintf(&buf, "  %s %s %s -> %s\n",s.State, s.Proto, s.LocalAddr, s.RemoteAddr)
 					}
 					fmt.Fprintf(&buf, "  Inode:      		%d\n", s.Inode)
+					if i == 5 {
+						buf.WriteString("[...]")
+						buf.WriteString("\n")
+						break connections
+					}
 					buf.WriteString("\n")
 				}
 				prevRecBytes = currentReceived
