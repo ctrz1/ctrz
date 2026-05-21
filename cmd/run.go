@@ -15,7 +15,7 @@ import (
 )
 
 var runCmd = &cobra.Command{
-	Use: "run",
+	Use:   "run",
 	Short: "Run a new process in an isolated container",
 	Run: func(cmd *cobra.Command, args []string) {
 		netns, err := cmd.Flags().GetBool("netns")
@@ -34,7 +34,7 @@ var runCmd = &cobra.Command{
 		}
 		if name == "" {
 			name = misc.GenerateRandomContName()
-			for ; !misc.CheckContName(name); {
+			for !misc.CheckContName(name) {
 				name = misc.GenerateRandomContName()
 			}
 			fmt.Printf("Container name: %s\n", name)
@@ -43,7 +43,7 @@ var runCmd = &cobra.Command{
 				log.Fatalf("Container '%s' already exists. Either chose a different name or remove the existing container", name)
 			}
 		}
-		pm, err := cmd.Flags().GetStringArray("port") 
+		pm, err := cmd.Flags().GetStringArray("port")
 		if err != nil {
 			log.Fatal("error retrieving --port (-p). Value not set", err)
 		}
@@ -74,16 +74,16 @@ var runCmd = &cobra.Command{
 			containerIP := "10.200.1.2"
 			if len(args) < 1 {
 				log.Fatal("At least one command must be provided")
-				os.Exit(1)
+			}
+			if err := network.SetupHostNetworking(); err != nil {
+				log.Fatal(err)
 			}
 			pid, cmd, err := network.CreateNetNs(args, maxCpu)
 			if err != nil {
 				log.Fatal(err)
-				os.Exit(1)
 			}
 			if err := network.SetupVeth(pid); err != nil {
 				log.Fatal(err)
-				os.Exit(1)
 			}
 			if err := syscall.Kill(pid, syscall.SIGCONT); err != nil {
 				log.Fatal(err)
@@ -94,15 +94,15 @@ var runCmd = &cobra.Command{
 			var hostPorts []int
 			var containerPorts []int
 			for _, p := range pm {
-				hostPort, containerPort, err := network.ExposePort(p, containerIP) 
+				hostPort, containerPort, err := network.ExposePort(p, containerIP)
 				if err != nil {
 					log.Fatal(err)
 				}
 				go func(hp, cp int) {
-    			    if err := network.Userland("tcp", containerIP, hp, cp); err != nil {
-    			        log.Printf("proxy %d:%d failed: %v", hp, cp, err)
-    			    }
-    			}(hostPort, containerPort)
+					if err := network.Userland("tcp", containerIP, hp, cp); err != nil {
+						log.Printf("proxy %d:%d failed: %v", hp, cp, err)
+					}
+				}(hostPort, containerPort)
 
 				hostPorts = append(hostPorts, hostPort)
 				containerPorts = append(containerPorts, containerPort)
@@ -117,7 +117,7 @@ var runCmd = &cobra.Command{
 				cmd.Stderr = os.Stderr
 				cmd.Wait()
 			}
-			select{}
+			select {}
 		}
 	},
 }
