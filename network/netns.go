@@ -12,18 +12,18 @@ import (
 func CreateNetNs(command []string, maxCpu string) (int, *exec.Cmd, error) {
 	args := append([]string{"__ctrz_init"}, command...)
 
-	cmd := exec.Command("/proc/self/exe", args...)
+	proc := exec.Command("/proc/self/exe", args...)
 
-	cmd.SysProcAttr = &syscall.SysProcAttr{
+	proc.SysProcAttr = &syscall.SysProcAttr{
 		Cloneflags: syscall.CLONE_NEWNET,
 	}
 
-	err := cmd.Start()
+	err := proc.Start()
 	if err != nil {
 		return 0, nil, err
 	}
 
-	pid := cmd.Process.Pid
+	pid := proc.Process.Pid
 	fmt.Printf("Started process with PID %d\n", pid)
 
 	err = cgroup.CreateAndAttach(pid, maxCpu)
@@ -31,7 +31,7 @@ func CreateNetNs(command []string, maxCpu string) (int, *exec.Cmd, error) {
 		return pid, nil, err
 	}
 
-	return pid, cmd, nil
+	return pid, proc, nil
 }
 
 func SetupHostNetworking() error {

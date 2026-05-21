@@ -20,17 +20,19 @@ var runCmd = &cobra.Command{
 	Run: func(cmd *cobra.Command, args []string) {
 		netns, err := cmd.Flags().GetBool("netns")
 		if err != nil {
-			log.Fatal("error retrieving --netns. Setting value to default (false): ", err)
-			netns = false
+			log.Fatal("error retrieving --netns:", err)
 		}
 		detach, err := cmd.Flags().GetBool("detach")
 		if err != nil {
-			log.Fatal("error retrieving --detach (-d). Setting value to default (false): ", err)
-			detach = false
+			log.Fatal("error retrieving --detach (-d):", err)
 		}
 		name, err := cmd.Flags().GetString("name")
 		if err != nil {
-			log.Fatal("error retrieving --name. Value not set", err)
+			log.Fatal("error retrieving --name:", err)
+		}
+		remove, err := cmd.Flags().GetBool("rm")
+		if err != nil {
+			log.Fatal("error retrieving -rm:", err)
 		}
 		if name == "" {
 			name = misc.GenerateRandomContName()
@@ -45,7 +47,7 @@ var runCmd = &cobra.Command{
 		}
 		pm, err := cmd.Flags().GetStringArray("port")
 		if err != nil {
-			log.Fatal("error retrieving --port (-p). Value not set", err)
+			log.Fatal("error retrieving --port (-p)", err)
 		}
 
 		period, err := cmd.Flags().GetInt("period")
@@ -78,7 +80,7 @@ var runCmd = &cobra.Command{
 			if err := network.SetupHostNetworking(); err != nil {
 				log.Fatal(err)
 			}
-			pid, cmd, err := network.CreateNetNs(args, maxCpu)
+			pid, proc, err := network.CreateNetNs(args, maxCpu)
 			if err != nil {
 				log.Fatal(err)
 			}
@@ -112,12 +114,16 @@ var runCmd = &cobra.Command{
 				log.Fatal(err)
 			}
 			if !detach {
-				cmd.Stdin = os.Stdin
-				cmd.Stdout = os.Stdout
-				cmd.Stderr = os.Stderr
-				cmd.Wait()
+				proc.Stdin = os.Stdin
+				proc.Stdout = os.Stdout
+				proc.Stderr = os.Stderr
+				proc.Wait()
 			}
-			select {}
+			if remove {
+				if err := misc.RemoveContainerByName(name, false); err != nil {
+					log.Fatalf("Error cleaning up container: %v", err)
+				}
+			}
 		}
 	},
 }
@@ -131,6 +137,7 @@ func init() {
 	runCmd.Flags().Int("period", 0, "Determines the time window in which to apply the runtime")
 	runCmd.Flags().String("name", "", "name of new container")
 	runCmd.Flags().StringArrayP("port", "p", []string{}, "Map host port to container port with '<host-port>:<container-port>'")
+	runCmd.Flags().Bool("rm", false, "Container automatically cleans up after finishing")
 	runCmd.MarkFlagsRequiredTogether("runtime", "period")
 	runCmd.MarkFlagsMutuallyExclusive("cpu", "runtime")
 }

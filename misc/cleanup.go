@@ -61,12 +61,14 @@ func RemoveContainerByName(name string, forceKill bool) error {
 		fmt.Printf("Killing process %d\n", containerData.PID)
 		//if err := syscall.Kill(containerData.PID, syscall.SIGKILL); err != nil {
 		if forceKill {
-			if err := exec.Command(KILL, FORCE, fmt.Sprintf("%d", containerData.PID)).Run(); err != nil {
-				return err
+			out, err := exec.Command(KILL, FORCE, fmt.Sprintf("%d", containerData.PID)).CombinedOutput()
+			if err != nil {
+				return fmt.Errorf("%v: %s", err, out)
 			}
 		} else {
-			if err := exec.Command(KILL, fmt.Sprintf("%d", containerData.PID)).Run(); err != nil {
-				return err
+			out, err := exec.Command(KILL, fmt.Sprintf("%d", containerData.PID)).CombinedOutput()
+			if err != nil {
+				return fmt.Errorf("%v: %s", err, out)
 			}
 		}
 	}
