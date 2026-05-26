@@ -2,14 +2,16 @@ package network
 
 import (
 	"ctrz/cgroup"
+	"ctrz/misc"
 	"fmt"
+	"log"
 	"os/exec"
 	"strconv"
 	"strings"
 	"syscall"
 )
 
-func CreateNetNs(command []string, maxCpu string) (int, *exec.Cmd, error) {
+func CreateNetNs(command []string, maxCpu, name string, detach bool) (int, *exec.Cmd, error) {
 	args := append([]string{"__ctrz_init"}, command...)
 
 	proc := exec.Command("/proc/self/exe", args...)
@@ -18,7 +20,11 @@ func CreateNetNs(command []string, maxCpu string) (int, *exec.Cmd, error) {
 		Cloneflags: syscall.CLONE_NEWNET,
 	}
 
-	err := proc.Start()
+	err := misc.ProcessLogs(name, proc, detach); if err != nil {
+		log.Fatal(err)
+	}
+
+	err = proc.Start()
 	if err != nil {
 		return 0, nil, err
 	}

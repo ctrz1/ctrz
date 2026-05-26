@@ -8,7 +8,6 @@ import (
 	"ctrz/network"
 	"fmt"
 	"log"
-	"os"
 	"syscall"
 
 	"github.com/spf13/cobra"
@@ -80,7 +79,7 @@ var runCmd = &cobra.Command{
 			if err := network.SetupHostNetworking(); err != nil {
 				log.Fatal(err)
 			}
-			pid, proc, err := network.CreateNetNs(args, maxCpu)
+			pid, proc, err := network.CreateNetNs(args, maxCpu, name, detach)
 			if err != nil {
 				log.Fatal(err)
 			}
@@ -114,10 +113,9 @@ var runCmd = &cobra.Command{
 				log.Fatal(err)
 			}
 			if !detach {
-				proc.Stdin = os.Stdin
-				proc.Stdout = os.Stdout
-				proc.Stderr = os.Stderr
-				proc.Wait()
+				if err := proc.Wait(); err != nil {
+					log.Fatal(err)
+				}
 			}
 			if remove {
 				if err := misc.RemoveContainerByName(name, false); err != nil {
