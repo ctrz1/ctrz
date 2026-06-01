@@ -7,7 +7,10 @@ import (
 )
 
 func CreateAndAttach(pid int, cpuMax string) error {
-	group := PathForPID(pid)
+	group, err := PathForPID(pid)
+	if err != nil {
+		return err
+	}
 
 	if err := os.Mkdir(group, 0755); err != nil && !os.IsExist(err) {
 		return err

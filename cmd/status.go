@@ -23,7 +23,10 @@ var statusCmd = &cobra.Command{
 		if err != nil {
 			log.Fatal(err)
 		}
-		path := cgroup.PathForPID(pid)
+		path, err := cgroup.PathForPID(pid)
+		if err != nil {
+			log.Fatal(err)
+		}
 		ctrls, err := cgroup.EnabledControllers(path)
 		if err != nil {
 			log.Fatal(err)

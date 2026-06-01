@@ -10,13 +10,13 @@ TARGETS := \
 	linux/386 \
 	linux/arm
 
-native:
+native: test
 	@mkdir -p $(BUILD_DIR)
 	@echo "Building native binary"
 	@GOOS=$(NATIVE_OS) GOARCH=$(NATIVE_ARCH) \
 	go build -o $(BUILD_DIR)/$(BINARY)-$(NATIVE_OS)-$(NATIVE_ARCH) .
 
-release:
+release: test
 	@mkdir -p $(BUILD_DIR)
 
 	@for target in $(TARGETS); do \
@@ -27,7 +27,10 @@ release:
 		go build -o $(BUILD_DIR)/$(BINARY)-$$os-$$arch .;\
 	done
 
+test:
+	go test ctrz/cgroup ctrz/misc ctrz/network ctrz/proc -vet=all
+
 clean:
 	rm -rf $(BUILD_DIR)
 
-.PHONY: native release clean
+.PHONY: native release clean test

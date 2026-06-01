@@ -36,7 +36,10 @@ func AttachNameToPID(pid int, name string, args []string, containerIP string, co
 		command += fmt.Sprintf("%s ", v)
 	}
 	command = strings.Trim(command, " ")
-	cgroup := cgroup.PathForPID(pid)
+	cgroup, err := cgroup.PathForPID(pid)
+	if err != nil {
+		return err
+	}
 	meta := ContainerMeta {
 		PID: pid,
 		Name: name,
@@ -72,6 +75,7 @@ func ctrzStateDir() (string, error) {
 
 
 func GetPIDFromName(name string) (int, error){
+	//TODO
 	return 0, nil
 }
 
