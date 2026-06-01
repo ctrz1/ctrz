@@ -117,7 +117,7 @@ var runCmd = &cobra.Command{
 					log.Fatal(err)
 				}
 			}
-			if remove {
+			if remove && !detach {
 				if err := misc.RemoveContainerByName(name, false); err != nil {
 					log.Fatalf("Error cleaning up container: %v", err)
 				}
