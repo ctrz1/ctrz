@@ -12,9 +12,9 @@ var versionCmd = &cobra.Command{
 	Short: "Print the version information",
 	Args:  cobra.NoArgs,
 	Run: func(cmd *cobra.Command, args []string) {
-		fmt.Printf("ctrz version %s\n", misc.Version)
-		fmt.Printf("Commit: %s\n", misc.Commit)
-		fmt.Printf("Build date: %s\n", misc.BuildDate)
+		fmt.Printf("ctrz version: \t%s\n", misc.Version)
+		fmt.Printf("Commit: \t%s\n", misc.Commit)
+		fmt.Printf("Build date: \t%s\n", misc.BuildDate)
 	},
 }
 

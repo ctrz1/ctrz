@@ -23,7 +23,8 @@ func CreateNetNs(command []string, maxCpu, name string, detach bool) (int, *exec
 		Cloneflags: syscall.CLONE_NEWNET,
 	}
 
-	err := misc.ProcessLogs(name, proc, detach); if err != nil {
+	err := misc.ProcessLogs(name, proc, detach)
+	if err != nil {
 		log.Fatal(err)
 	}
 
@@ -154,7 +155,7 @@ func ExposePort(ports string, containerIP string) (int, int, error) {
 		{
 			"iptables",
 			"-t", "nat",
-			"-A", "PREROUTING",
+			"-I", "PREROUTING", "1",
 			"-p", "tcp",
 			"--dport", strconv.Itoa(pm.HostPort),
 			"-j", "DNAT",
@@ -163,7 +164,7 @@ func ExposePort(ports string, containerIP string) (int, int, error) {
 		},
 		{
 			"iptables",
-			"-A", "FORWARD",
+			"-I", "FORWARD", "1",
 			"-p", "tcp",
 			"-d", containerIP,
 			"--dport", strconv.Itoa(pm.ContainerPort),
@@ -200,7 +201,7 @@ func parsePorts(ports string) (PortMapping, error) {
 func DenyAllElse(containerIP string) error {
 	cmds := [][]string{
 		{
-			"iptables", "-I", "FORWARD", "1",
+			"iptables", "-A", "FORWARD",
 			"-d", containerIP,
 			"-j", "DROP",
 		},
