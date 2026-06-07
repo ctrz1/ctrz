@@ -12,6 +12,8 @@ import (
 	"os/exec"
 	"path/filepath"
 	"syscall"
+
+	"golang.org/x/sys/unix"
 )
 
 func ctrzInit() {
@@ -32,9 +34,9 @@ func ctrzInit() {
 		log.Fatalf("Error preventing mount propagation: %v\n", err)
 	}
 
-	if err := os.MkdirAll(rootfs, 0755); err != nil {
-		log.Fatalf("Error creating rootfs: %v\n", err)
-	}
+	//if err := os.MkdirAll(rootfs, 0755); err != nil {
+	//	log.Fatalf("Error creating rootfs: %v\n", err)
+	//}
 
 	// 2. ensure rootfs is a mount point
 	if err := syscall.Mount(rootfs, rootfs, "", syscall.MS_BIND|syscall.MS_REC, ""); err != nil {
@@ -75,6 +77,24 @@ func ctrzInit() {
 		log.Fatalf("Error setting new hostname: %v\n", err)
 	}
 
+	os.MkdirAll("/dev", 0755)
+
+	err = syscall.Mount(
+		"tmpfs",
+		"/dev",
+		"tmpfs",
+		0,
+		"",
+	)
+	if err != nil {
+		log.Fatalf("Error mounting /dev: %v", err)
+	}
+
+	syscall.Mknod("/dev/null", syscall.S_IFCHR|0666, int(unix.Mkdev(1, 3)))
+	syscall.Mknod("/dev/zero", syscall.S_IFCHR|0666, int(unix.Mkdev(1, 5)))
+	syscall.Mknod("/dev/random", syscall.S_IFCHR|0666, int(unix.Mkdev(1, 8)))
+	syscall.Mknod("/dev/urandom", syscall.S_IFCHR|0666, int(unix.Mkdev(1, 9)))
+
 	if err := os.MkdirAll("/proc", 0555); err != nil {
 		log.Fatalf("Error creating '/proc: %v\n", err)
 	}
@@ -89,11 +109,21 @@ func ctrzInit() {
 		os.Getegid(),
 	)
 
+	bin_path := os.Getenv("PATH")
+	fmt.Printf("Current $PATH: %s\n", bin_path)
+	if bin_path != "/bin" {
+		if err := os.Setenv("PATH", "/bin"); err != nil {
+			fmt.Println(err)
+		}
+		bin_path := os.Getenv("PATH")
+		fmt.Printf("Current $PATH: %s\n", bin_path)
+	}
+
 	o, err = exec.Command("ls", "-lah").CombinedOutput()
 	fmt.Printf("Current ls: %s, error: %v\n", string(o), err)
 
-	o, err = exec.Command("echo", "$PATH").CombinedOutput()
-	fmt.Printf("Current $PATH: %s, error: %v\n", string(o), err)
+	o, err = exec.Command("/bin/ls", "-lah").CombinedOutput()
+	fmt.Printf("Current ls: %s, error: %v\n", string(o), err)
 
 	// 8. mount pseudo filesystems
 	if err := syscall.Mount("proc", "/proc", "proc", 0, ""); err != nil {

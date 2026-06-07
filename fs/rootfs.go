@@ -22,7 +22,7 @@ func MountRootFs(containerID string) (string, error) {
 	rootfsDir := filepath.Join(
 		"/var/lib/ctrz/containers",
 		containerID,
-		"rootfs",
+		//"rootfs",
 	)
 
 	if err := os.MkdirAll(rootfsDir, 0755); err != nil {
@@ -95,7 +95,9 @@ func extractTarGz(data []byte, dest string) error {
 				return err
 			}
 
-			if err := os.Symlink(hdr.Linkname, cleanTarget); err != nil {
+			//fmt.Printf("target: %s; linkname: %s\n", cleanTarget, hdr.Linkname)
+
+			if err := os.Symlink(filepath.Join(dest, hdr.Linkname), cleanTarget); err != nil {
 				return fmt.Errorf(
 					"Error creating symlink %s -> %s: %v",
 					cleanTarget,

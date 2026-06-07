@@ -33,7 +33,7 @@ func Userland(proto string, containerIP string, hostPort int, containerPort int)
 func proxy(c net.Conn, containerIP string, containerPort int, proto string) {
 	defer c.Close()
 
-	dst, err := net.Dial(proto, fmt.Sprintf("%s:%d", containerIP, containerPort))
+	dst, err := net.Dial(proto, fmt.Sprintf("[%s]:%d", containerIP, containerPort))
 	if err != nil {
 		log.Println("dial failed:", err)
 		return
