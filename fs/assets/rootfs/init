@@ -1,0 +1,15 @@
+#!/bin/sh
+
+echo "[init] starting"
+
+mount -t proc proc /proc
+mount -t sysfs sysfs /sys
+mount -t devtmpfs devtmpfs /dev
+
+mount -t tmpfs cgroup_root /sys/fs/cgroup
+mkdir /sys/fs/cgroup/cpuset
+mount -t cgroup cpuset -o cpuset /sys/fs/cgroup/cpuset/
+
+echo "[init] mounts done"
+
+exec setsid /bin/sh </dev/console >/dev/console 2>&1

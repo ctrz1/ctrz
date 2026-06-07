@@ -8,6 +8,7 @@ import (
 	"ctrz/misc"
 	"fmt"
 	"log"
+	"os"
 	"os/exec"
 	"strconv"
 	"strings"
@@ -20,8 +21,32 @@ func CreateNetNs(command []string, maxCpu, name string, detach bool) (int, *exec
 	proc := exec.Command("/proc/self/exe", args...)
 
 	proc.SysProcAttr = &syscall.SysProcAttr{
-		Cloneflags: syscall.CLONE_NEWNET,
+		Cloneflags: syscall.CLONE_NEWUSER |
+			syscall.CLONE_NEWNET |
+			syscall.CLONE_NEWUTS |
+			syscall.CLONE_NEWPID |
+			syscall.CLONE_NEWNS,
+
+		UidMappings: []syscall.SysProcIDMap{
+			{
+				ContainerID: 0,
+				HostID:      os.Getuid(),
+				Size:        1,
+			},
+		},
+		GidMappings: []syscall.SysProcIDMap{
+			{
+				ContainerID: 0,
+				HostID:      os.Getgid(),
+				Size:        1,
+			},
+		},
+
+		Unshareflags: syscall.CLONE_NEWNS,
+		GidMappingsEnableSetgroups: false,
+		Chroot: "/",
 	}
+
 
 	err := misc.ProcessLogs(name, proc, detach)
 	if err != nil {
