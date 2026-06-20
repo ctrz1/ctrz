@@ -7,8 +7,6 @@ import (
 	"ctrz/cgroup"
 	"ctrz/misc"
 	"fmt"
-	"log"
-	"os"
 	"os/exec"
 	"strconv"
 	"strings"
@@ -20,43 +18,51 @@ func CreateNetNs(command []string, maxCpu, name string, detach bool) (int, *exec
 
 	proc := exec.Command("/proc/self/exe", args...)
 
+	fmt.Printf("Starting new process...\n")
+
 	proc.SysProcAttr = &syscall.SysProcAttr{
-		Cloneflags: syscall.CLONE_NEWUSER |
+		Cloneflags: 
+			//syscall.CLONE_NEWUSER | --> can be used for rootless containers later. Ignore for now
 			syscall.CLONE_NEWNET |
 			syscall.CLONE_NEWUTS |
-			syscall.CLONE_NEWPID |
-			syscall.CLONE_NEWNS,
+			syscall.CLONE_NEWPID,
 
-		UidMappings: []syscall.SysProcIDMap{
-			{
-				ContainerID: 0,
-				HostID:      os.Getuid(),
-				Size:        1,
-			},
-		},
-		GidMappings: []syscall.SysProcIDMap{
-			{
-				ContainerID: 0,
-				HostID:      os.Getgid(),
-				Size:        1,
-			},
-		},
+		//UidMappings: []syscall.SysProcIDMap{
+		//	{
+		//		ContainerID: 0,
+		//		HostID:      os.Getuid(),
+		//		Size:        1,
+		//	},
+		//},
+		//GidMappings: []syscall.SysProcIDMap{
+		//	{
+		//		ContainerID: 0,
+		//		HostID:      os.Getgid(),
+		//		Size:        1,
+		//	},
+		//},
 
 		Unshareflags: syscall.CLONE_NEWNS,
 		GidMappingsEnableSetgroups: false,
-		Chroot: "/",
 	}
+
+	fmt.Printf("Set proc params...\n")
 
 
 	err := misc.ProcessLogs(name, proc, detach)
 	if err != nil {
-		log.Fatal(err)
+		return 0, nil, err
 	}
+
+	fmt.Printf("Attached logs to terminal...\n")
 
 	err = proc.Start()
 	if err != nil {
+		fmt.Printf("Error starting process: %v\n", err)
 		return 0, nil, err
 	}
+
+	fmt.Printf("Started proc...\n")
 
 	pid := proc.Process.Pid
 	fmt.Printf("Started process with PID %d\n", pid)

@@ -54,10 +54,26 @@ func ctrzInit() {
 		return nil
 	})
 
+	data, err := os.ReadFile("/proc/self/uid_map")
+	fmt.Println(string(data), err)
+
+	data, err = os.ReadFile("/proc/self/gid_map")
+	fmt.Println(string(data), err)
+
+	data, err = os.ReadFile("/proc/self/status")
+	fmt.Println(string(data), err)
+
 	// 4. pivot into container rootfs
 	if err := syscall.PivotRoot(rootfs, old); err != nil {
 		log.Fatalf("Error pivoting into container rootfs: %v\n", err)
 	}
+
+	st := syscall.Stat_t{}
+	err = syscall.Stat("/", &st)
+	fmt.Printf("root dev=%d inode=%d err=%v\n", st.Dev, st.Ino, err)
+
+	err = os.WriteFile("/testfile", []byte("x"), 0644)
+	fmt.Printf("write=%v\n", err)
 
 	// 5. move to new root
 	if err := os.Chdir("/"); err != nil {
@@ -79,18 +95,20 @@ func ctrzInit() {
 
 	os.MkdirAll("/dev", 0755)
 
-	err = syscall.Mount(
-		"tmpfs",
-		"/dev",
-		"tmpfs",
-		0,
-		"",
-	)
+	//err = syscall.Mount(
+	//	"tmpfs",
+	//	"/dev",
+	//	"tmpfs",
+	//	0,
+	//	"",
+	//)
 	if err != nil {
 		log.Fatalf("Error mounting /dev: %v", err)
 	}
 
-	syscall.Mknod("/dev/null", syscall.S_IFCHR|0666, int(unix.Mkdev(1, 3)))
+	if err := syscall.Mknod("/dev/null", syscall.S_IFCHR|0666, int(unix.Mkdev(1, 3))); err != nil {
+		fmt.Printf("Error creating /dev/null: %v\n", err)
+	}
 	syscall.Mknod("/dev/zero", syscall.S_IFCHR|0666, int(unix.Mkdev(1, 5)))
 	syscall.Mknod("/dev/random", syscall.S_IFCHR|0666, int(unix.Mkdev(1, 8)))
 	syscall.Mknod("/dev/urandom", syscall.S_IFCHR|0666, int(unix.Mkdev(1, 9)))
@@ -99,7 +117,10 @@ func ctrzInit() {
 		log.Fatalf("Error creating '/proc: %v\n", err)
 	}
 
-	data, _ := os.ReadFile("/proc/self/status")
+	data, err = os.ReadFile("/proc/self/status")
+	if err != nil {
+		fmt.Printf("Error redaing /proc/self/status: %v\n", err)
+	}
 	fmt.Println(string(data))
 
 	fmt.Printf("uid=%d euid=%d gid=%d egid=%d\n",
