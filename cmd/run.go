@@ -9,7 +9,6 @@ import (
 	"fmt"
 	"log"
 	"syscall"
-	"time"
 
 	"github.com/spf13/cobra"
 )

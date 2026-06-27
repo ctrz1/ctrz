@@ -13,12 +13,11 @@ import (
 	"syscall"
 )
 
+//TODO: This function should no longer be in the network package. It should also be renamed. It has gone way beyond it's original scope
 func CreateNetNs(command []string, maxCpu, name string, detach bool) (int, *exec.Cmd, error) {
 	args := append([]string{"__ctrz_init"}, command...)
 
 	proc := exec.Command("/proc/self/exe", args...)
-
-	fmt.Printf("Starting new process...\n")
 
 	proc.SysProcAttr = &syscall.SysProcAttr{
 		Cloneflags: 
@@ -26,21 +25,6 @@ func CreateNetNs(command []string, maxCpu, name string, detach bool) (int, *exec
 			syscall.CLONE_NEWNET |
 			syscall.CLONE_NEWUTS |
 			syscall.CLONE_NEWPID,
-
-		//UidMappings: []syscall.SysProcIDMap{
-		//	{
-		//		ContainerID: 0,
-		//		HostID:      os.Getuid(),
-		//		Size:        1,
-		//	},
-		//},
-		//GidMappings: []syscall.SysProcIDMap{
-		//	{
-		//		ContainerID: 0,
-		//		HostID:      os.Getgid(),
-		//		Size:        1,
-		//	},
-		//},
 
 		Unshareflags: syscall.CLONE_NEWNS,
 		GidMappingsEnableSetgroups: false,
@@ -54,15 +38,11 @@ func CreateNetNs(command []string, maxCpu, name string, detach bool) (int, *exec
 		return 0, nil, err
 	}
 
-	fmt.Printf("Attached logs to terminal...\n")
-
 	err = proc.Start()
 	if err != nil {
 		fmt.Printf("Error starting process: %v\n", err)
 		return 0, nil, err
 	}
-
-	fmt.Printf("Started proc...\n")
 
 	pid := proc.Process.Pid
 	fmt.Printf("Started process with PID %d\n", pid)
