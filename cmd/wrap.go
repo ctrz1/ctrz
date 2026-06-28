@@ -16,7 +16,7 @@ var wrapCmd = &cobra.Command{
     Run: func(cmd *cobra.Command, args []string) {
         pid, err := cmd.Flags().GetInt("pid")
 		if err != nil {
-			log.Fatal(err)
+			log.Fatalf("Unable to retrieve pid: %v", pid)
 		}
 
 		if err := cgroup.EnsureCtrzRoot(); err != nil {

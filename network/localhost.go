@@ -11,7 +11,6 @@ func Userland(proto string, containerIP string, hostPort int, containerPort int)
 	switch proto {
 	//TODO: accept other protocols
 	case "tcp":
-		// Currently ctrz only accept IPv4 connections
 		ln, err := net.Listen("tcp", fmt.Sprintf(":%d", hostPort))
 		if err != nil {
 			return err
@@ -25,7 +24,7 @@ func Userland(proto string, containerIP string, hostPort int, containerPort int)
 		    go proxy(c, containerIP, containerPort, "tcp4")
 		}
 	default:
-		return fmt.Errorf("Unsupported protocol")
+		return fmt.Errorf("Unsupported protocol: %s\n", proto)
 	}
 	
 }
@@ -52,5 +51,6 @@ func proxy(c net.Conn, containerIP string, containerPort int, proto string) {
 		done <- struct{}{}
 	}()
 
+	<-done
 	<-done
 }
