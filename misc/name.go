@@ -26,7 +26,7 @@ func AttachNameToPID(pid int, name string, args []string, containerIP string, co
 	if err != nil {
 		return fmt.Errorf("Error attaching name to PID: %v", err)
 	}
-	err = os.MkdirAll(filepath.Join(path, "containers"), 0755)
+	err = os.MkdirAll(filepath.Join(path, "containers", name), 0755)
 	if err != nil {
 		return fmt.Errorf("Error attaching name to PID: %v", err)
 	}
@@ -55,7 +55,7 @@ func AttachNameToPID(pid int, name string, args []string, containerIP string, co
 		fmt.Println("Error")
 		return err
 	}
-	err = os.WriteFile(filepath.Join(path, "containers", fmt.Sprintf("%s.json", name)), metaJson, 0644)
+	err = os.WriteFile(filepath.Join(path, "containers", name, fmt.Sprintf("%s.json", name)), metaJson, 0644)
 	if err != nil {
 		return fmt.Errorf("Error attaching name to PID: %v", err)
 	}

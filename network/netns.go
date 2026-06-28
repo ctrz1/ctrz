@@ -7,29 +7,38 @@ import (
 	"ctrz/cgroup"
 	"ctrz/misc"
 	"fmt"
-	"log"
 	"os/exec"
 	"strconv"
 	"strings"
 	"syscall"
 )
 
+//TODO: This function should no longer be in the network package. It should also be renamed. It has gone way beyond it's original scope
 func CreateNetNs(command []string, maxCpu, name string, detach bool) (int, *exec.Cmd, error) {
-	args := append([]string{"__ctrz_init"}, command...)
+	args := append([]string{name}, command...)
+	args = append([]string{"__ctrz_init"}, args...)
 
 	proc := exec.Command("/proc/self/exe", args...)
 
 	proc.SysProcAttr = &syscall.SysProcAttr{
-		Cloneflags: syscall.CLONE_NEWNET,
+		Cloneflags: 
+			//syscall.CLONE_NEWUSER | --> can be used for rootless containers later. Ignore for now
+			syscall.CLONE_NEWNET |
+			syscall.CLONE_NEWUTS |
+			syscall.CLONE_NEWPID,
+
+		Unshareflags: syscall.CLONE_NEWNS,
+		GidMappingsEnableSetgroups: false,
 	}
 
 	err := misc.ProcessLogs(name, proc, detach)
 	if err != nil {
-		log.Fatal(err)
+		return 0, nil, err
 	}
 
 	err = proc.Start()
 	if err != nil {
+		fmt.Printf("Error starting process: %v\n", err)
 		return 0, nil, err
 	}
 
