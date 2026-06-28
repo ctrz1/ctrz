@@ -32,7 +32,7 @@ func MountRootFs(containerID string) (string, error) {
 		return "", err
 	}
 
-	return rootfsDir, nil
+	return fmt.Sprintf("%s/rootfs", rootfsDir), nil
 }
 
 func extractTarGz(data []byte, dest string) error {
