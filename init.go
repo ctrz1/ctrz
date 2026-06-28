@@ -16,11 +16,15 @@ import (
 )
 
 func ctrzInit() {
+
+	containerID := os.Args[2]
+	fmt.Println(containerID)
+
 	if err := syscall.Kill(1, syscall.SIGSTOP); err != nil {
 		log.Fatal(err)
 	}
 
-	rootfs, err := fs.MountRootFs("containerID")
+	rootfs, err := fs.MountRootFs(containerID)
 	if err != nil {
 		log.Fatalf("Error mounting rootfs: %v\n", err)
 	}
@@ -99,8 +103,8 @@ func ctrzInit() {
 		os.Exit(1)
 	}
 
-	cmd := os.Args[2]
-	args := os.Args[2:]
+	cmd := os.Args[3]
+	args := os.Args[3:]
 
 	err = syscall.Exec(cmd, args, os.Environ())
 	if err != nil {

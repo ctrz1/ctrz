@@ -15,7 +15,8 @@ import (
 
 //TODO: This function should no longer be in the network package. It should also be renamed. It has gone way beyond it's original scope
 func CreateNetNs(command []string, maxCpu, name string, detach bool) (int, *exec.Cmd, error) {
-	args := append([]string{"__ctrz_init"}, command...)
+	args := append([]string{name}, command...)
+	args = append([]string{"__ctrz_init"}, args...)
 
 	proc := exec.Command("/proc/self/exe", args...)
 

@@ -48,7 +48,7 @@ func RemoveContainerByName(name string, forceKill bool) error {
 	if err != nil {
 		return err
 	}
-	data, err := os.ReadFile(filepath.Join(dir, "containers", fmt.Sprintf("%s.json", name)))
+	data, err := os.ReadFile(filepath.Join(dir, "containers", name, fmt.Sprintf("%s.json", name)))
 	if err != nil {
 		return err
 	}
@@ -75,7 +75,7 @@ func RemoveContainerByName(name string, forceKill bool) error {
 	if err := removeIPTableRules(containerData); err != nil {
 		log.Fatal(err)
 	}
-	if err := os.Remove(filepath.Join(dir, "containers", fmt.Sprintf("%s.json", name))); err != nil {
+	if err := os.RemoveAll(filepath.Join(dir, "containers", name,/* fmt.Sprintf("%s.json", name)*/)); err != nil {
 		return err
 	}
 	return nil
