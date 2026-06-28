@@ -1,8 +1,8 @@
 BUILD_DIR := ./build
 BINARY := ctrz
 
-NATIVE_OS := $(shell go env GOOS)
-NATIVE_ARCH := $(shell go env GOARCH)
+GOOS := $(shell go env GOOS)
+GOARCH := $(shell go env GOARCH)
 
 TARGETS := \
 	linux/amd64 \
@@ -18,11 +18,10 @@ LDFLAGS := -X 'ctrz/misc.Version=$(VERSION)' \
            -X 'ctrz/misc.Commit=$(COMMIT)' \
            -X 'ctrz/misc.BuildDate=$(DATE)'
 
-native: test
-	@mkdir -p $(BUILD_DIR)
-	@echo "Building native binary"
-	@GOOS=$(NATIVE_OS) GOARCH=$(NATIVE_ARCH) \
-	go build -ldflags "$(LDFLAGS)" -o $(BUILD_DIR)/$(BINARY)-$(NATIVE_OS)-$(NATIVE_ARCH) .
+build:
+	@echo "Building binary for GOOS=$(GOOS) and GOARCH=$(GOARCH)"
+	@GOOS=$(GOOS) GOARCH=$(GOARCH) \
+	go build -ldflags "$(LDFLAGS)" -o $(BINARY)-$(GOOS)-$(GOARCH) .
 
 release: test
 	@mkdir -p $(BUILD_DIR)
@@ -41,4 +40,4 @@ test:
 clean:
 	rm -rf $(BUILD_DIR)
 
-.PHONY: native release clean test
+.PHONY: build release clean test
