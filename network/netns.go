@@ -30,9 +30,6 @@ func CreateNetNs(command []string, maxCpu, name string, detach bool) (int, *exec
 		GidMappingsEnableSetgroups: false,
 	}
 
-	fmt.Printf("Set proc params...\n")
-
-
 	err := misc.ProcessLogs(name, proc, detach)
 	if err != nil {
 		return 0, nil, err
