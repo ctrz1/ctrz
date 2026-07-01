@@ -1,0 +1,29 @@
+name: Release
+
+on: 
+  push:
+    tags:
+      - 'v*'
+    branches:
+      - main
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version: '1.26'
+      
+      - name: Run Tests
+        run: |
+          go test ctrz/cgroup ctrz/misc ctrz/network ctrz/proc -vet=all
+
+      - name: Build Binary
+        run: |
+          VERSION=${{ github.ref_name }}
+          COMMIT=$(git rev-parse --short HEAD)
+          BUILD_TIME=$(date -u +%Y-%m-%dT%H:%M:%SZ)
+          PKG=go-version-example/version
+          go build -ldflags="-X '${PKG}.Version=${VERSION}' -X '${PKG}.CommitSHA=${COMMIT}' -X '${PKG}.BuildTime=${BUILD_TIME}'" -o ctrz
