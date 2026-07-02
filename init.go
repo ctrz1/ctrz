@@ -18,7 +18,8 @@ import (
 func ctrzInit() {
 
 	containerID := os.Args[2]
-	fmt.Println(containerID)
+	cmd := os.Args[3]
+	args := os.Args[3:]
 
 	if err := syscall.Kill(1, syscall.SIGSTOP); err != nil {
 		log.Fatal(err)
@@ -27,6 +28,10 @@ func ctrzInit() {
 	rootfs, err := fs.MountRootFs(containerID)
 	if err != nil {
 		log.Fatalf("Error mounting rootfs: %v\n", err)
+	}
+
+	if err := fs.InjectBinary(cmd, fmt.Sprintf("%s/app", rootfs)); err != nil {
+		log.Fatalf("Error injecting %s into namespace: %v\n", cmd, err)
 	}
 
 	// 1. prevent mount propagation to host
@@ -102,9 +107,6 @@ func ctrzInit() {
 		fmt.Fprintln(os.Stderr, "no command specified")
 		os.Exit(1)
 	}
-
-	cmd := os.Args[3]
-	args := os.Args[3:]
 
 	err = syscall.Exec(cmd, args, os.Environ())
 	if err != nil {

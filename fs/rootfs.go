@@ -1,6 +1,3 @@
-//go:build linux
-// +build linux
-
 package fs
 
 import (
@@ -65,7 +62,7 @@ func extractTarGz(data []byte, dest string) error {
 		switch hdr.Typeflag {
 		case tar.TypeDir:
 			if err := os.MkdirAll(cleanTarget, os.FileMode(hdr.Mode)); err != nil {
-				return fmt.Errorf("create dir %s: %w", cleanTarget, err)
+				return fmt.Errorf("Error creating dir %s: %w", cleanTarget, err)
 			}
 		case tar.TypeReg:
 			if err := os.MkdirAll(filepath.Dir(cleanTarget), 0755); err != nil {
@@ -94,7 +91,7 @@ func extractTarGz(data []byte, dest string) error {
 				return err
 			}
 
-			if err := os.Symlink(/*filepath.Join(dest, hdr.Linkname)*/hdr.Linkname, cleanTarget); err != nil {
+			if err := os.Symlink(hdr.Linkname, cleanTarget); err != nil {
 				return fmt.Errorf(
 					"Error creating symlink %s -> %s: %v",
 					cleanTarget,
