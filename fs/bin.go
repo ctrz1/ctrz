@@ -1,13 +1,12 @@
 package fs
 
 import (
-	"fmt"
 	"io"
 	"os"
+	"path/filepath"
 )
 
 func InjectBinary(src, dest string) error {
-	fmt.Println("Copying binary...")
 	in, err := os.Open(src)
 	if err != nil {
 		return err
@@ -23,13 +22,17 @@ func InjectBinary(src, dest string) error {
 		return err
 	}
 
-	out, err := os.OpenFile(dest, os.O_CREATE|os.O_WRONLY|os.O_TRUNC, info.Mode())
+	out, err := os.OpenFile(
+		filepath.Join(dest, "bin"),
+		os.O_CREATE|os.O_WRONLY|os.O_TRUNC,
+		info.Mode(),
+	)
 	if err != nil {
 		return err
 	}
 	defer out.Close()
 
-	if _, err := io.Copy(in, out); err != nil {
+	if _, err := io.Copy(out, in); err != nil {
 		return err
 	}
 

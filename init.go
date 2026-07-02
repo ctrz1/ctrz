@@ -108,7 +108,7 @@ func ctrzInit() {
 		os.Exit(1)
 	}
 
-	err = syscall.Exec(cmd, args, os.Environ())
+	err = syscall.Exec("/app/bin", args, os.Environ())
 	if err != nil {
 		log.Fatal("exec failed: ", err)
 	}
