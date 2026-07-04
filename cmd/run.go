@@ -97,12 +97,7 @@ var runCmd = &cobra.Command{
 			if err != nil {
 				log.Fatal(err)
 			}
-			go func(hp, cp int) {
-				if err := network.Userland("tcp", containerIP, hp, cp); err != nil {
-					log.Printf("proxy %d:%d failed: %v", hp, cp, err)
-				}
-			}(hostPort, containerPort)
-			
+
 			hostPorts = append(hostPorts, hostPort)
 			containerPorts = append(containerPorts, containerPort)
 		}

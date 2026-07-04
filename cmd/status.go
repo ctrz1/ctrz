@@ -8,7 +8,6 @@ import (
 	"fmt"
 	"log"
 	"math"
-	"os"
 	"strconv"
 	"strings"
 	"time"
@@ -23,11 +22,8 @@ import (
 var statusCmd = &cobra.Command{
 	Use:   "status <container name>",
 	Short: "Show live resource usage of a process",
+	Args:  cobra.ExactArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
-		if len(args) != 1 {
-			cmd.Help()
-			os.Exit(0)
-		}
 		containerName := args[0]
 		containerData, err := misc.GetContainerDataFromName(containerName)
 		if err != nil {
@@ -43,7 +39,7 @@ var statusCmd = &cobra.Command{
 		}
 
 		fmt.Printf("\033[3J\033[H\033[2J") // Clear the screen
-		fmt.Printf("\033[3J") // Clear scrollback buffer
+		fmt.Printf("\033[3J")              // Clear scrollback buffer
 
 		fmt.Printf("PID: %d\n", containerData.PID)
 		fmt.Printf("Cgroup: %s\n\n", path)
@@ -55,7 +51,7 @@ var statusCmd = &cobra.Command{
 
 		for {
 			var buf bytes.Buffer
-		
+
 			if ctrls["cpu"] {
 				cpu, err := cgroup.ReadCPUStat(path)
 				if err != nil {
@@ -67,7 +63,7 @@ var statusCmd = &cobra.Command{
 					fmt.Fprintf(&buf, "  throttled_usec:	%d\n\n", cpu.ThrottledUsec)
 				}
 			}
-		
+
 			if ctrls["memory"] {
 				mem, err := cgroup.ReadMemStat(path)
 				if err != nil {
@@ -89,11 +85,11 @@ var statusCmd = &cobra.Command{
 			} else {
 				currentSent, err := strconv.ParseUint(sockets[0].ReceivedBytes, 10, 64)
 				if err != nil {
-					
+
 				}
 				currentReceived, err := strconv.ParseUint(sockets[0].SentBytes, 10, 64)
 				if err != nil {
-					
+
 				}
 				deltaSent := currentSent - prevSentBytes
 				deltaReceived := currentReceived - prevRecBytes
@@ -102,12 +98,12 @@ var statusCmd = &cobra.Command{
 				fmt.Fprintf(&buf, "  Network traffic (namespace level):\n")
 				fmt.Fprintf(&buf, "    Bytes Received:    	%s/second (%s total)\n", convertBytesToFittingUnit(deltaReceived), convertBytesToFittingUnit(currentReceived))
 				fmt.Fprintf(&buf, "    Bytes Sent:     	%s/second (%s total)\n\n", convertBytesToFittingUnit(deltaSent), convertBytesToFittingUnit(currentSent))
-				connections:
-				for i, s := range sockets{
+			connections:
+				for i, s := range sockets {
 					if s.State == "LISTEN" {
-						fmt.Fprintf(&buf, "  %s %s %s\n",s.State, s.Proto, s.RemoteAddr)
-					}else {
-						fmt.Fprintf(&buf, "  %s %s %s -> %s\n",s.State, s.Proto, s.LocalAddr, s.RemoteAddr)
+						fmt.Fprintf(&buf, "  %s %s %s\n", s.State, s.Proto, s.RemoteAddr)
+					} else {
+						fmt.Fprintf(&buf, "  %s %s %s -> %s\n", s.State, s.Proto, s.LocalAddr, s.RemoteAddr)
 					}
 					fmt.Fprintf(&buf, "  Inode:      		%d\n", s.Inode)
 					if i == 5 {
@@ -120,14 +116,14 @@ var statusCmd = &cobra.Command{
 				prevRecBytes = currentReceived
 				prevSentBytes = currentSent
 			}
-		
+
 			output := buf.String()
 			lines := strings.Count(output, "\n")
-		
+
 			moveCursorUp(lastLines)
 			fmt.Print("\033[J")
 			fmt.Print(output)
-		
+
 			lastLines = lines
 			time.Sleep(1 * time.Second)
 		}
