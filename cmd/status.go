@@ -8,25 +8,32 @@ import (
 	"fmt"
 	"log"
 	"math"
+	"os"
 	"strconv"
 	"strings"
 	"time"
 
 	"ctrz/cgroup"
+	"ctrz/misc"
 	"ctrz/network"
 
 	"github.com/spf13/cobra"
 )
 
 var statusCmd = &cobra.Command{
-	Use:   "status",
+	Use:   "status <container name>",
 	Short: "Show live resource usage of a process",
 	Run: func(cmd *cobra.Command, args []string) {
-		pid, err := cmd.Flags().GetInt("pid")
+		if len(args) != 1 {
+			cmd.Help()
+			os.Exit(0)
+		}
+		containerName := args[0]
+		containerData, err := misc.GetContainerDataFromName(containerName)
 		if err != nil {
 			log.Fatal(err)
 		}
-		path, err := cgroup.PathForPID(pid)
+		path, err := cgroup.PathForPID(containerData.PID)
 		if err != nil {
 			log.Fatal(err)
 		}
@@ -35,7 +42,10 @@ var statusCmd = &cobra.Command{
 			log.Fatal(err)
 		}
 
-		fmt.Printf("PID: %d\n", pid)
+		fmt.Printf("\033[3J\033[H\033[2J") // Clear the screen
+		fmt.Printf("\033[3J") // Clear scrollback buffer
+
+		fmt.Printf("PID: %d\n", containerData.PID)
 		fmt.Printf("Cgroup: %s\n\n", path)
 		fmt.Print("\033[s") // Save cursor position
 
@@ -73,7 +83,7 @@ var statusCmd = &cobra.Command{
 				}
 			}
 
-			sockets, err := network.ResolveSockets(pid)
+			sockets, err := network.ResolveSockets(containerData.PID)
 			if err != nil {
 				fmt.Fprintf(&buf, "Network: error reading stats: %v\n\n", err)
 			} else {
@@ -126,8 +136,6 @@ var statusCmd = &cobra.Command{
 
 func init() {
 	rootCmd.AddCommand(statusCmd)
-	statusCmd.Flags().Int("pid", 0, "PID of wrapped process")
-	statusCmd.MarkFlagRequired("pid")
 }
 
 func moveCursorUp(n int) {

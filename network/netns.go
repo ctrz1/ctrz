@@ -44,7 +44,6 @@ func CreateNetNs(command []string, maxCpu, name, ip string, detach bool) (int, *
 	}
 
 	pid := proc.Process.Pid
-	fmt.Printf("Started process with PID %d\n", pid)
 
 	err = cgroup.CreateAndAttach(pid, maxCpu)
 	if err != nil {
