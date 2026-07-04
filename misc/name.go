@@ -40,14 +40,14 @@ func AttachNameToPID(pid int, name string, args []string, containerIP string, co
 	if err != nil {
 		return err
 	}
-	meta := ContainerMeta {
-		PID: pid,
-		Name: name,
-		Command: command,
-		Cgroup: cgroup,
-		ContainerIP: containerIP,
+	meta := ContainerMeta{
+		PID:           pid,
+		Name:          name,
+		Command:       command,
+		Cgroup:        cgroup,
+		ContainerIP:   containerIP,
 		ContainerPort: containerPort,
-		HostPort: hostPort,
+		HostPort:      hostPort,
 	}
 	metaJson, err := json.Marshal(meta)
 	fmt.Printf("%v\n", string(metaJson))
@@ -73,8 +73,7 @@ func ctrzStateDir() (string, error) {
 	return filepath.Join(home, ".local", "share", "ctrz"), nil
 }
 
-
-func GetPIDFromName(name string) (int, error){
+func GetPIDFromName(name string) (int, error) {
 	//TODO
 	return 0, nil
 }

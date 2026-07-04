@@ -1,7 +1,6 @@
 package misc
 
 import (
-	"encoding/json"
 	"fmt"
 	"log"
 	"os"
@@ -48,12 +47,8 @@ func RemoveContainerByName(name string, forceKill bool) error {
 	if err != nil {
 		return err
 	}
-	data, err := os.ReadFile(filepath.Join(dir, "containers", name, fmt.Sprintf("%s.json", name)))
+	containerData, err := GetContainerDataFromName(name)
 	if err != nil {
-		return err
-	}
-	var containerData ContainerMeta
-	if err := json.Unmarshal(data, &containerData); err != nil {
 		return err
 	}
 	_, err = os.Open(fmt.Sprintf("/proc/%d/stat", containerData.PID))
@@ -75,7 +70,10 @@ func RemoveContainerByName(name string, forceKill bool) error {
 	if err := removeIPTableRules(containerData); err != nil {
 		log.Fatal(err)
 	}
-	if err := os.RemoveAll(filepath.Join(dir, "containers", name,/* fmt.Sprintf("%s.json", name)*/)); err != nil {
+	if err := os.RemoveAll(filepath.Join(dir, "containers", name /* fmt.Sprintf("%s.json", name)*/)); err != nil {
+		return err
+	}
+	if err := RemoveContIP(containerData.ContainerIP); err != nil {
 		return err
 	}
 	return nil

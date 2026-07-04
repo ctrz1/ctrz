@@ -1,5 +1,12 @@
 package misc
 
+import (
+	"encoding/json"
+	"fmt"
+	"os"
+	"path/filepath"
+)
+
 type ContainerMeta struct {
 	PID           int    `json:"pid"`
 	Name          string `json:"name"`
@@ -9,4 +16,20 @@ type ContainerMeta struct {
 	ContainerIP   string `json:"ContainerIP"`
 	ContainerPort []int  `json:"containerPort,omitempty"`
 	HostPort      []int  `json:"hostPort,omitempty"`
+}
+
+func GetContainerDataFromName(name string) (ContainerMeta, error) {
+	var containerData ContainerMeta
+	dir, err := ctrzStateDir()
+	if err != nil {
+		return containerData, err
+	}
+	data, err := os.ReadFile(filepath.Join(dir, "containers", name, fmt.Sprintf("%s.json", name)))
+	if err != nil {
+		return containerData, err
+	}
+	if err := json.Unmarshal(data, &containerData); err != nil {
+		return containerData, err
+	}
+	return containerData, nil
 }

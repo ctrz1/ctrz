@@ -17,9 +17,10 @@ import (
 
 func ctrzInit() {
 
-	containerID := os.Args[2]
-	cmd := os.Args[3]
-	args := os.Args[3:]
+	containerIP := os.Args[2]
+	containerID := os.Args[3]
+	cmd := os.Args[4]
+	args := os.Args[4:]
 
 	if err := syscall.Kill(1, syscall.SIGSTOP); err != nil {
 		log.Fatal(err)
@@ -99,7 +100,7 @@ func ctrzInit() {
 		log.Fatalf("Error mounting pseudo filesystem: %v\n", err)
 	}
 
-	if err := network.SetupNetns("10.200.1.2"); err != nil {
+	if err := network.SetupNetns(containerIP); err != nil {
 		log.Fatal("run failed: ", err)
 	}
 

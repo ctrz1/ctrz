@@ -72,14 +72,18 @@ var runCmd = &cobra.Command{
 			maxCpu = fmt.Sprintf("%d 100000", quota)
 		}
 		if netns {
-			containerIP := "10.200.1.2"
+			//containerIP := "10.200.1.2"
+			containerIP, err := misc.AssignContIP()
+			if err != nil {
+				log.Fatal(err)
+			}
 			if len(args) < 1 {
 				log.Fatal("At least one command must be provided")
 			}
 			if err := network.SetupHostNetworking(); err != nil {
 				log.Fatal(err)
 			}
-			pid, proc, err := network.CreateNetNs(args, maxCpu, name, detach)
+			pid, proc, err := network.CreateNetNs(args, maxCpu, name, containerIP, detach)
 			if err != nil {
 				log.Fatal(err)
 			}
