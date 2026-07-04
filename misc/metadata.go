@@ -20,15 +20,24 @@ type ContainerMeta struct {
 
 func GetContainerDataFromName(name string) (ContainerMeta, error) {
 	var containerData ContainerMeta
-	dir, err := ctrzStateDir()
-	if err != nil {
-		return containerData, err
-	}
-	data, err := os.ReadFile(filepath.Join(dir, "containers", name, fmt.Sprintf("%s.json", name)))
+	data, err := GetRawContainerDataFromName(name)
 	if err != nil {
 		return containerData, err
 	}
 	if err := json.Unmarshal(data, &containerData); err != nil {
+		return containerData, err
+	}
+	return containerData, nil
+}
+
+func GetRawContainerDataFromName(name string) ([]byte, error) {
+	var containerData []byte
+	dir, err := ctrzStateDir()
+	if err != nil {
+		return containerData, err
+	}
+	containerData, err = os.ReadFile(filepath.Join(dir, "containers", name, fmt.Sprintf("%s.json", name)))
+	if err != nil {
 		return containerData, err
 	}
 	return containerData, nil

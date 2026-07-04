@@ -9,6 +9,7 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"time"
 )
 
 //TODO:
@@ -45,12 +46,13 @@ func AttachNameToPID(pid int, name string, args []string, containerIP string, co
 		Name:          name,
 		Command:       command,
 		Cgroup:        cgroup,
+		StartTime:     time.Now().Unix(),
 		ContainerIP:   containerIP,
 		ContainerPort: containerPort,
 		HostPort:      hostPort,
 	}
-	metaJson, err := json.Marshal(meta)
-	fmt.Printf("%v\n", string(metaJson))
+	metaJson, err := json.MarshalIndent(meta, "", "  ")
+	fmt.Printf("Container name: %s\n", name)
 	if err != nil {
 		fmt.Println("Error")
 		return err
