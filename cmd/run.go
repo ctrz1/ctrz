@@ -34,7 +34,6 @@ var runCmd = &cobra.Command{
 			for !misc.CheckContName(name) {
 				name = misc.GenerateRandomContName()
 			}
-			fmt.Printf("Container name: %s\n", name)
 		} else {
 			if !misc.CheckContName(name) {
 				log.Fatalf("Container '%s' already exists. Either chose a different name or remove the existing container", name)

@@ -95,3 +95,21 @@ func GenerateRandomContName() string {
 	randId := rand.Int()
 	return fmt.Sprintf("ctrz-%d", randId)
 }
+
+func RetrieveAllContainers() ([]string, error) {
+	stateDir, err := ctrzStateDir()
+	if err != nil {
+		return nil, err
+	}
+	dirs, err := os.ReadDir(filepath.Join(stateDir, "containers"))
+		if err != nil {
+			log.Fatal(err)
+		}
+		var containers []string
+		for _, dir := range dirs {
+			if dir.Type().IsDir() {
+				containers = append(containers, dir.Name())
+			}
+		}
+	return containers, nil
+}
