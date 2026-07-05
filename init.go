@@ -1,5 +1,4 @@
 //go:build linux
-// +build linux
 
 package main
 
@@ -17,8 +16,10 @@ import (
 
 func ctrzInit() {
 
-	containerID := os.Args[2]
-	fmt.Println(containerID)
+	containerIP := os.Args[2]
+	containerID := os.Args[3]
+	cmd := os.Args[4]
+	args := os.Args[4:]
 
 	if err := syscall.Kill(1, syscall.SIGSTOP); err != nil {
 		log.Fatal(err)
@@ -27,6 +28,10 @@ func ctrzInit() {
 	rootfs, err := fs.MountRootFs(containerID)
 	if err != nil {
 		log.Fatalf("Error mounting rootfs: %v\n", err)
+	}
+
+	if err := fs.InjectBinary(cmd, fmt.Sprintf("%s/app", rootfs)); err != nil {
+		log.Fatalf("Error injecting %s into namespace: %v\n", cmd, err)
 	}
 
 	// 1. prevent mount propagation to host
@@ -94,7 +99,7 @@ func ctrzInit() {
 		log.Fatalf("Error mounting pseudo filesystem: %v\n", err)
 	}
 
-	if err := network.SetupNetns("10.200.1.2"); err != nil {
+	if err := network.SetupNetns(containerIP); err != nil {
 		log.Fatal("run failed: ", err)
 	}
 
@@ -103,10 +108,7 @@ func ctrzInit() {
 		os.Exit(1)
 	}
 
-	cmd := os.Args[3]
-	args := os.Args[3:]
-
-	err = syscall.Exec(cmd, args, os.Environ())
+	err = syscall.Exec("/app/bin", args, os.Environ())
 	if err != nil {
 		log.Fatal("exec failed: ", err)
 	}

@@ -15,7 +15,7 @@ import (
 
 var wrapCmd = &cobra.Command{
     Use:   "wrap",
-    Short: "'wrap' a process in a debug container",
+    Short: "'wrap' a process in a new cgroup",
     Run: func(cmd *cobra.Command, args []string) {
         pid, err := cmd.Flags().GetInt("pid")
 		if err != nil {

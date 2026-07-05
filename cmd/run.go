@@ -17,10 +17,6 @@ var runCmd = &cobra.Command{
 	Use:   "run",
 	Short: "Run a new process in an isolated container",
 	Run: func(cmd *cobra.Command, args []string) {
-		netns, err := cmd.Flags().GetBool("netns")
-		if err != nil {
-			log.Fatal("error retrieving --netns:", err)
-		}
 		detach, err := cmd.Flags().GetBool("detach")
 		if err != nil {
 			log.Fatal("error retrieving --detach (-d):", err)
@@ -38,7 +34,6 @@ var runCmd = &cobra.Command{
 			for !misc.CheckContName(name) {
 				name = misc.GenerateRandomContName()
 			}
-			fmt.Printf("Container name: %s\n", name)
 		} else {
 			if !misc.CheckContName(name) {
 				log.Fatalf("Container '%s' already exists. Either chose a different name or remove the existing container", name)
@@ -71,56 +66,52 @@ var runCmd = &cobra.Command{
 			quota := cpu * 1000
 			maxCpu = fmt.Sprintf("%d 100000", quota)
 		}
-		if netns {
-			containerIP := "10.200.1.2"
-			if len(args) < 1 {
-				log.Fatal("At least one command must be provided")
-			}
-			if err := network.SetupHostNetworking(); err != nil {
-				log.Fatal(err)
-			}
-			pid, proc, err := network.CreateNetNs(args, maxCpu, name, detach)
+		containerIP, err := misc.AssignContIP()
+		if err != nil {
+			log.Fatal(err)
+		}
+		if len(args) < 1 {
+			log.Fatal("At least one command must be provided")
+		}
+		if err := network.SetupHostNetworking(); err != nil {
+			log.Fatal(err)
+		}
+		pid, proc, err := network.CreateNetNs(args, maxCpu, name, containerIP, detach)
+		if err != nil {
+			log.Fatal(err)
+		}
+		if err := network.SetupVeth(pid); err != nil {
+			log.Fatal(err)
+		}
+		if err := syscall.Kill(pid, syscall.SIGCONT); err != nil {
+			log.Fatal(err)
+		}
+		if err := network.DenyAllElse(containerIP); err != nil {
+			log.Fatal(err)
+		}
+		var hostPorts []int
+		var containerPorts []int
+		for _, p := range pm {
+			hostPort, containerPort, err := network.ExposePort(p, containerIP)
 			if err != nil {
 				log.Fatal(err)
 			}
-			if err := network.SetupVeth(pid); err != nil {
-				log.Fatal(err)
-			}
-			if err := syscall.Kill(pid, syscall.SIGCONT); err != nil {
-				log.Fatal(err)
-			}
-			if err := network.DenyAllElse(containerIP); err != nil {
-				log.Fatal(err)
-			}
-			var hostPorts []int
-			var containerPorts []int
-			for _, p := range pm {
-				hostPort, containerPort, err := network.ExposePort(p, containerIP)
-				if err != nil {
-					log.Fatal(err)
-				}
-				go func(hp, cp int) {
-					if err := network.Userland("tcp", containerIP, hp, cp); err != nil {
-						log.Printf("proxy %d:%d failed: %v", hp, cp, err)
-					}
-				}(hostPort, containerPort)
 
-				hostPorts = append(hostPorts, hostPort)
-				containerPorts = append(containerPorts, containerPort)
-			}
-			err = misc.AttachNameToPID(pid, name, args, containerIP, containerPorts, hostPorts)
-			if err != nil {
+			hostPorts = append(hostPorts, hostPort)
+			containerPorts = append(containerPorts, containerPort)
+		}
+		err = misc.AttachNameToPID(pid, name, args, containerIP, containerPorts, hostPorts)
+		if err != nil {
+			log.Fatal(err)
+		}
+		if !detach {
+			if err := proc.Wait(); err != nil {
 				log.Fatal(err)
 			}
-			if !detach {
-				if err := proc.Wait(); err != nil {
-					log.Fatal(err)
-				}
-			}
-			if remove && !detach {
-				if err := misc.RemoveContainerByName(name, false); err != nil {
-					log.Fatalf("Error cleaning up container: %v", err)
-				}
+		}
+		if remove && !detach {
+			if err := misc.RemoveContainerByName(name, false); err != nil {
+				log.Fatalf("Error cleaning up container: %v", err)
 			}
 		}
 	},
@@ -128,7 +119,6 @@ var runCmd = &cobra.Command{
 
 func init() {
 	rootCmd.AddCommand(runCmd)
-	runCmd.Flags().Bool("netns", false, "Create a new network namespace")
 	runCmd.Flags().BoolP("detach", "d", false, "detach process from terminal")
 	runCmd.Flags().Int("cpu", 100, "Limits the CPU usage (in %) of the wrapped process")
 	runCmd.Flags().Int("runtime", 0, "Configures the runtime of a process within a cgroup")

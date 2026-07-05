@@ -13,20 +13,23 @@ import (
 	"time"
 
 	"ctrz/cgroup"
+	"ctrz/misc"
 	"ctrz/network"
 
 	"github.com/spf13/cobra"
 )
 
 var statusCmd = &cobra.Command{
-	Use:   "status",
+	Use:   "status <container name>",
 	Short: "Show live resource usage of a process",
+	Args:  cobra.ExactArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
-		pid, err := cmd.Flags().GetInt("pid")
+		containerName := args[0]
+		containerData, err := misc.GetContainerDataFromName(containerName)
 		if err != nil {
 			log.Fatal(err)
 		}
-		path, err := cgroup.PathForPID(pid)
+		path, err := cgroup.PathForPID(containerData.PID)
 		if err != nil {
 			log.Fatal(err)
 		}
@@ -35,7 +38,10 @@ var statusCmd = &cobra.Command{
 			log.Fatal(err)
 		}
 
-		fmt.Printf("PID: %d\n", pid)
+		fmt.Printf("\033[3J\033[H\033[2J") // Clear the screen
+		fmt.Printf("\033[3J")              // Clear scrollback buffer
+
+		fmt.Printf("PID: %d\n", containerData.PID)
 		fmt.Printf("Cgroup: %s\n\n", path)
 		fmt.Print("\033[s") // Save cursor position
 
@@ -45,7 +51,7 @@ var statusCmd = &cobra.Command{
 
 		for {
 			var buf bytes.Buffer
-		
+
 			if ctrls["cpu"] {
 				cpu, err := cgroup.ReadCPUStat(path)
 				if err != nil {
@@ -57,7 +63,7 @@ var statusCmd = &cobra.Command{
 					fmt.Fprintf(&buf, "  throttled_usec:	%d\n\n", cpu.ThrottledUsec)
 				}
 			}
-		
+
 			if ctrls["memory"] {
 				mem, err := cgroup.ReadMemStat(path)
 				if err != nil {
@@ -73,17 +79,17 @@ var statusCmd = &cobra.Command{
 				}
 			}
 
-			sockets, err := network.ResolveSockets(pid)
+			sockets, err := network.ResolveSockets(containerData.PID)
 			if err != nil {
 				fmt.Fprintf(&buf, "Network: error reading stats: %v\n\n", err)
 			} else {
 				currentSent, err := strconv.ParseUint(sockets[0].ReceivedBytes, 10, 64)
 				if err != nil {
-					
+
 				}
 				currentReceived, err := strconv.ParseUint(sockets[0].SentBytes, 10, 64)
 				if err != nil {
-					
+
 				}
 				deltaSent := currentSent - prevSentBytes
 				deltaReceived := currentReceived - prevRecBytes
@@ -92,12 +98,12 @@ var statusCmd = &cobra.Command{
 				fmt.Fprintf(&buf, "  Network traffic (namespace level):\n")
 				fmt.Fprintf(&buf, "    Bytes Received:    	%s/second (%s total)\n", convertBytesToFittingUnit(deltaReceived), convertBytesToFittingUnit(currentReceived))
 				fmt.Fprintf(&buf, "    Bytes Sent:     	%s/second (%s total)\n\n", convertBytesToFittingUnit(deltaSent), convertBytesToFittingUnit(currentSent))
-				connections:
-				for i, s := range sockets{
+			connections:
+				for i, s := range sockets {
 					if s.State == "LISTEN" {
-						fmt.Fprintf(&buf, "  %s %s %s\n",s.State, s.Proto, s.RemoteAddr)
-					}else {
-						fmt.Fprintf(&buf, "  %s %s %s -> %s\n",s.State, s.Proto, s.LocalAddr, s.RemoteAddr)
+						fmt.Fprintf(&buf, "  %s %s %s\n", s.State, s.Proto, s.RemoteAddr)
+					} else {
+						fmt.Fprintf(&buf, "  %s %s %s -> %s\n", s.State, s.Proto, s.LocalAddr, s.RemoteAddr)
 					}
 					fmt.Fprintf(&buf, "  Inode:      		%d\n", s.Inode)
 					if i == 5 {
@@ -110,14 +116,14 @@ var statusCmd = &cobra.Command{
 				prevRecBytes = currentReceived
 				prevSentBytes = currentSent
 			}
-		
+
 			output := buf.String()
 			lines := strings.Count(output, "\n")
-		
+
 			moveCursorUp(lastLines)
 			fmt.Print("\033[J")
 			fmt.Print(output)
-		
+
 			lastLines = lines
 			time.Sleep(1 * time.Second)
 		}
@@ -126,8 +132,6 @@ var statusCmd = &cobra.Command{
 
 func init() {
 	rootCmd.AddCommand(statusCmd)
-	statusCmd.Flags().Int("pid", 0, "PID of wrapped process")
-	statusCmd.MarkFlagRequired("pid")
 }
 
 func moveCursorUp(n int) {

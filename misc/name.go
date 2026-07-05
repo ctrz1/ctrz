@@ -1,6 +1,3 @@
-//go:build linux
-// +build linux
-
 package misc
 
 import (
@@ -12,6 +9,7 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"time"
 )
 
 //TODO:
@@ -43,17 +41,18 @@ func AttachNameToPID(pid int, name string, args []string, containerIP string, co
 	if err != nil {
 		return err
 	}
-	meta := ContainerMeta {
-		PID: pid,
-		Name: name,
-		Command: command,
-		Cgroup: cgroup,
-		ContainerIP: containerIP,
+	meta := ContainerMeta{
+		PID:           pid,
+		Name:          name,
+		Command:       command,
+		Cgroup:        cgroup,
+		StartTime:     time.Now().Unix(),
+		ContainerIP:   containerIP,
 		ContainerPort: containerPort,
-		HostPort: hostPort,
+		HostPort:      hostPort,
 	}
-	metaJson, err := json.Marshal(meta)
-	fmt.Printf("%v\n", string(metaJson))
+	metaJson, err := json.MarshalIndent(meta, "", "  ")
+	fmt.Printf("Container name: %s\n", name)
 	if err != nil {
 		fmt.Println("Error")
 		return err
@@ -76,8 +75,7 @@ func ctrzStateDir() (string, error) {
 	return filepath.Join(home, ".local", "share", "ctrz"), nil
 }
 
-
-func GetPIDFromName(name string) (int, error){
+func GetPIDFromName(name string) (int, error) {
 	//TODO
 	return 0, nil
 }
@@ -96,4 +94,22 @@ func CheckContName(name string) bool {
 func GenerateRandomContName() string {
 	randId := rand.Int()
 	return fmt.Sprintf("ctrz-%d", randId)
+}
+
+func RetrieveAllContainers() ([]string, error) {
+	stateDir, err := ctrzStateDir()
+	if err != nil {
+		return nil, err
+	}
+	dirs, err := os.ReadDir(filepath.Join(stateDir, "containers"))
+		if err != nil {
+			log.Fatal(err)
+		}
+		var containers []string
+		for _, dir := range dirs {
+			if dir.Type().IsDir() {
+				containers = append(containers, dir.Name())
+			}
+		}
+	return containers, nil
 }
