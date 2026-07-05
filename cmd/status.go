@@ -49,6 +49,9 @@ var statusCmd = &cobra.Command{
 		var prevRecBytes uint64 = 0
 		var prevSentBytes uint64 = 0
 
+		var prevUsec uint64 = 0
+		prevTime := time.Now()
+
 		for {
 			var buf bytes.Buffer
 
@@ -57,10 +60,15 @@ var statusCmd = &cobra.Command{
 				if err != nil {
 					fmt.Fprintf(&buf, "CPU: error reading stats: %v\n\n", err)
 				} else {
+					now := time.Now()
 					buf.WriteString("CPU:\n")
+					fmt.Fprintf(&buf, "  unsage:		%.2f%%\n", float64(cpu.UsageUsec - prevUsec)/float64(now.Sub(prevTime).Microseconds()) * 100)
 					fmt.Fprintf(&buf, "  usage_usec:		%d\n", cpu.UsageUsec)
 					fmt.Fprintf(&buf, "  nr_throttled:		%d\n", cpu.NrThrottled)
 					fmt.Fprintf(&buf, "  throttled_usec:	%d\n\n", cpu.ThrottledUsec)
+
+					prevUsec = cpu.UsageUsec
+					prevTime = now
 				}
 			}
 
@@ -82,7 +90,7 @@ var statusCmd = &cobra.Command{
 			sockets, err := network.ResolveSockets(containerData.PID)
 			if err != nil {
 				fmt.Fprintf(&buf, "Network: error reading stats: %v\n\n", err)
-			} else {
+			} else if len(sockets) > 0 {
 				currentSent, err := strconv.ParseUint(sockets[0].ReceivedBytes, 10, 64)
 				if err != nil {
 
