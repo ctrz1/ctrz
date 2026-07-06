@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"ctrz/misc"
+	"ctrz/proc"
 	"fmt"
 	"log"
 	"os"
@@ -26,7 +27,7 @@ var psCmd = &cobra.Command{
 
 		fmt.Fprintln(w)
 		//fmt.Fprintln(w, "-------------------------------------------------------------------------------")
-		fmt.Fprintln(w, "Name\tPID\tIP\tCreated\tCommand")
+		fmt.Fprintln(w, "Name\tPID\tIP\tCreated\tCommand\tStatus")
 		//fmt.Fprintln(w, "-------------------------------------------------------------------------------")
 
 		for _, c := range containers {
@@ -35,14 +36,21 @@ var psCmd = &cobra.Command{
 				fmt.Printf("Error getting container info: %v\n", err)
 				continue
 			}
+			var status string
+			if proc.IsProcActive(containerData.PID) {
+				status = "active"
+			} else {
+				status = "inactive"
+			}
 			created := time.Unix(containerData.StartTime, 0).Format("02/01/2006 15:04:05")
 			fmt.Fprintf(w,
-				"%s\t%d\t%s\t%s\t%s\n", 
+				"%s\t%d\t%s\t%s\t%s\t%s\n", 
 				containerData.Name, 
 				containerData.PID, 
 				containerData.ContainerIP, 
 				created, 
 				containerData.Command,
+				status,
 			)
 		}
 	},
