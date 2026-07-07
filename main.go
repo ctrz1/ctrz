@@ -12,6 +12,10 @@ func main() {
 		ctrzInit()
 		return
 	}
+	if len(os.Args) > 1 && os.Args[1] == "__deamon" {
+		ctrzDeamon()
+		return
+	}
 
 	cmd.Execute()
 }

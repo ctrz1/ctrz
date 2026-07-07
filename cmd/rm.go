@@ -13,7 +13,8 @@ import (
 
 var rmCmd = &cobra.Command{
 	Use: "rm",
-	Short: "Remove a container",
+	Short: "Remove a containern and all of its data (including stats)",
+
 	Run: func(cmd *cobra.Command, args []string)  {
 		name, err := cmd.Flags().GetString("name")
 		if err != nil {
@@ -58,6 +59,6 @@ func init() {
 	rmCmd.Flags().String("name", "", "Name of the container to be removed")
 	rmCmd.Flags().BoolP("force", "9", false, "Uses KILL instead TERM command. This forces a process to stop immediately and does not allow for cleanup routines")
 	rmCmd.Flags().Bool("inactive", false, "Removes all inactive containers")
-	rmCmd.Flags().Bool("all", false, "Remove all containers")
+	rmCmd.Flags().BoolP("all", "a", false, "Remove all containers")
 	rmCmd.MarkFlagsMutuallyExclusive("name", "inactive", "all")
 }
