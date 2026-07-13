@@ -12,16 +12,6 @@ import (
 	"time"
 )
 
-//TODO:
-/**
-1. Make names unique --> if a name is chosen again, check if the process is stale or not (either replace process or throw an error)
-	- Check if /proc/<pid> exists
-	- Compare StartTime from /var/lib/ctrz/containers/xyz.json to /proc/<pid>/stat
-2. Implement cleanup ('rm' command)
-3. Integrate names into status & wrap command
-4. Implement a 'ps' command showing active processes
-**/
-
 func AttachNameToPID(pid int, name string, args []string, containerIP string, containerPort []int, hostPort []int) error {
 	path, err := CtrzStateDir()
 	if err != nil {
@@ -85,7 +75,7 @@ func CheckContName(name string) bool {
 	if err != nil {
 		log.Fatalf("Error attaching name to PID: %v", err)
 	}
-	if _, err := os.Stat(filepath.Join(path, "containers", fmt.Sprintf("%s.json", name))); err == nil {
+	if _, err := os.Stat(filepath.Join(path, "containers", name, fmt.Sprintf("%s.json", name))); err == nil {
 		return false
 	}
 	return true
