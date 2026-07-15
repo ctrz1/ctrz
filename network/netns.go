@@ -13,7 +13,7 @@ import (
 	"syscall"
 )
 
-//TODO: This function should no longer be in the network package. It should also be renamed. It has gone way beyond it's original scope
+// TODO: This function should no longer be in the network package. It should also be renamed. It has gone way beyond it's original scope
 func CreateNetNs(command []string, maxCpu, name, ip string, detach bool) (int, *exec.Cmd, error) {
 	args := append([]string{name}, command...)
 	args = append([]string{ip}, args...)
@@ -28,7 +28,7 @@ func CreateNetNs(command []string, maxCpu, name, ip string, detach bool) (int, *
 			syscall.CLONE_NEWUTS |
 			syscall.CLONE_NEWPID,
 
-		Unshareflags: syscall.CLONE_NEWNS,
+		Unshareflags:               syscall.CLONE_NEWNS,
 		GidMappingsEnableSetgroups: false,
 	}
 
@@ -63,6 +63,14 @@ func SetupHostNetworking() error {
 		return fmt.Errorf("enable ip_forward failed: %v: %s", err, out)
 	}
 
+	if out, err := exec.Command(
+		"sysctl",
+		"-w",
+		"net.ipv4.conf.all.route_localnet=1",
+	).CombinedOutput(); err != nil {
+		return fmt.Errorf("enable ip_forward failed: %v: %s", err, out)
+	}
+
 	// Create bridge if missing
 	if err := exec.Command("ip", "link", "show", "ctrz-br0").Run(); err != nil {
 		if out, err := exec.Command("ip", "link", "add", "ctrz-br0", "type", "bridge").CombinedOutput(); err != nil {
@@ -78,7 +86,7 @@ func SetupHostNetworking() error {
 	}
 
 	// NAT
-	err := ensureRule(
+	if err := ensureRule(
 		[]string{
 			"-t", "nat",
 			"-C", "POSTROUTING",
@@ -91,13 +99,30 @@ func SetupHostNetworking() error {
 			"-s", "10.200.1.0/24",
 			"-j", "MASQUERADE",
 		},
-	)
-	if err != nil {
+	); err != nil {
+		return err
+	}
+	if err := ensureRule(
+		[]string{
+			"-t", "nat",
+			"-A", "POSTROUTING",
+			"-s", "127.0.0.0/8",
+			"-d", "10.200.1.0/24",
+			"-j", "MASQUERADE",
+		},
+		[]string{
+			"-t", "nat",
+			"-A", "POSTROUTING",
+			"-s", "127.0.0.0/8",
+			"-d", "10.200.1.0/24",
+			"-j", "MASQUERADE",
+		},
+	); err != nil {
 		return err
 	}
 
 	// Allow outbound forwarding
-	err = ensureRule(
+	if err := ensureRule(
 		[]string{
 			"-C", "FORWARD",
 			"-i", "ctrz-br0",
@@ -108,13 +133,12 @@ func SetupHostNetworking() error {
 			"-i", "ctrz-br0",
 			"-j", "ACCEPT",
 		},
-	)
-	if err != nil {
+	); err != nil {
 		return err
 	}
 
 	// Allow return traffic
-	err = ensureRule(
+	if err := ensureRule(
 		[]string{
 			"-C", "FORWARD",
 			"-o", "ctrz-br0",
@@ -129,8 +153,7 @@ func SetupHostNetworking() error {
 			"--ctstate", "ESTABLISHED,RELATED",
 			"-j", "ACCEPT",
 		},
-	)
-	if err != nil {
+	); err != nil {
 		return err
 	}
 
@@ -178,6 +201,15 @@ func ExposePort(ports string, containerIP string) (int, int, error) {
 			"-d", containerIP,
 			"--dport", strconv.Itoa(pm.ContainerPort),
 			"-j", "ACCEPT",
+		},
+		{
+			"iptables",
+			"-t", "nat",
+			"-I", "OUTPUT", "1",
+			"-p", "tcp",
+			"-d", "127.0.0.0/8",
+			"--dport", strconv.Itoa(pm.HostPort),
+			"-j", "DNAT", "--to-destination", fmt.Sprintf("%s:%d", containerIP, pm.ContainerPort),
 		},
 	}
 
