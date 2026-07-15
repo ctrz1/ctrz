@@ -6,7 +6,7 @@ import (
 )
 
 func ProcessLogs(name string, proc *exec.Cmd, detach bool) error {
-	//dir, err := ctrzStateDir()
+	//dir, err := CtrzStateDir()
 	//if err != nil {
 	//	return fmt.Errorf("Error retrieving ctrz state directory: %v", err)
 	//}

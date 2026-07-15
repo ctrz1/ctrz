@@ -32,7 +32,7 @@ func GetContainerDataFromName(name string) (ContainerMeta, error) {
 
 func GetRawContainerDataFromName(name string) ([]byte, error) {
 	var containerData []byte
-	dir, err := ctrzStateDir()
+	dir, err := CtrzStateDir()
 	if err != nil {
 		return containerData, err
 	}

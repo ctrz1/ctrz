@@ -12,18 +12,8 @@ import (
 	"time"
 )
 
-//TODO:
-/**
-1. Make names unique --> if a name is chosen again, check if the process is stale or not (either replace process or throw an error)
-	- Check if /proc/<pid> exists
-	- Compare StartTime from /var/lib/ctrz/containers/xyz.json to /proc/<pid>/stat
-2. Implement cleanup ('rm' command)
-3. Integrate names into status & wrap command
-4. Implement a 'ps' command showing active processes
-**/
-
 func AttachNameToPID(pid int, name string, args []string, containerIP string, containerPort []int, hostPort []int) error {
-	path, err := ctrzStateDir()
+	path, err := CtrzStateDir()
 	if err != nil {
 		return fmt.Errorf("Error attaching name to PID: %v", err)
 	}
@@ -64,7 +54,7 @@ func AttachNameToPID(pid int, name string, args []string, containerIP string, co
 	return nil
 }
 
-func ctrzStateDir() (string, error) {
+func CtrzStateDir() (string, error) {
 	if os.Geteuid() == 0 {
 		return filepath.Join("/var", "lib", "ctrz"), nil
 	}
@@ -81,11 +71,11 @@ func GetPIDFromName(name string) (int, error) {
 }
 
 func CheckContName(name string) bool {
-	path, err := ctrzStateDir()
+	path, err := CtrzStateDir()
 	if err != nil {
 		log.Fatalf("Error attaching name to PID: %v", err)
 	}
-	if _, err := os.Stat(filepath.Join(path, "containers", fmt.Sprintf("%s.json", name))); err == nil {
+	if _, err := os.Stat(filepath.Join(path, "containers", name, fmt.Sprintf("%s.json", name))); err == nil {
 		return false
 	}
 	return true
@@ -97,19 +87,19 @@ func GenerateRandomContName() string {
 }
 
 func RetrieveAllContainers() ([]string, error) {
-	stateDir, err := ctrzStateDir()
+	stateDir, err := CtrzStateDir()
 	if err != nil {
 		return nil, err
 	}
 	dirs, err := os.ReadDir(filepath.Join(stateDir, "containers"))
-		if err != nil {
-			log.Fatal(err)
+	if err != nil {
+		log.Fatal(err)
+	}
+	var containers []string
+	for _, dir := range dirs {
+		if dir.Type().IsDir() {
+			containers = append(containers, dir.Name())
 		}
-		var containers []string
-		for _, dir := range dirs {
-			if dir.Type().IsDir() {
-				containers = append(containers, dir.Name())
-			}
-		}
+	}
 	return containers, nil
 }

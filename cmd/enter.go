@@ -6,22 +6,29 @@ import (
 	"os"
 	"os/exec"
 	"strconv"
+	"strings"
 
 	"github.com/spf13/cobra"
 	"golang.org/x/sys/unix"
 )
 
 var enterCmd = &cobra.Command{
-	Use:   "enter <container name>",
+	Use:   "enter <container name> [OPTIONS]",
 	Short: "Enter into an interactive shell within a container",
-	Args:  cobra.ExactArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
+		command, err := cmd.Flags().GetString("command")
+		if err != nil {
+			log.Fatal(err)
+		}
 		containerName := args[0]
 		containerData, err := misc.GetContainerDataFromName(containerName)
 		if err != nil {
 			log.Fatalf("Error retrieving container data: %v\n", err)
 		}
-		shell := "sh"
+		if command == "" {
+			command = "sh"	
+		}
+		commandArr := strings.Split(command, " ")
 		path, err := exec.LookPath("nsenter")
 		if err != nil {
 		    log.Fatal("nsenter not found in PATH")
@@ -29,7 +36,7 @@ var enterCmd = &cobra.Command{
 
 		if err := unix.Exec(
 		    path,
-		    []string{"nsenter", "-a", "-t", strconv.Itoa(containerData.PID), shell},
+		    append([]string{"nsenter", "-a", "-t", strconv.Itoa(containerData.PID)}, commandArr...),
 		    os.Environ(),
 		); err != nil {
 		    log.Fatal(err)
@@ -39,4 +46,5 @@ var enterCmd = &cobra.Command{
 
 func init() {
 	rootCmd.AddCommand(enterCmd)
+	enterCmd.Flags().StringP("command", "c", "", "Pass a command to the container without entering. This flag makes the command non-interactive")
 }

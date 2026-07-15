@@ -9,7 +9,7 @@ import (
 )
 
 func AssignContIP() (string, error) {
-	dir, err := ctrzStateDir()
+	dir, err := CtrzStateDir()
 	if err != nil {
 		return "", fmt.Errorf("Error retrieving ctrz state directory: %v\n", err)
 	}
@@ -78,7 +78,7 @@ func writeIPToFile(IP, dir string) error {
 }
 
 func RemoveContIP(containerIP string) error {
-	dir, err := ctrzStateDir()
+	dir, err := CtrzStateDir()
 	if err != nil {
 		return fmt.Errorf("Error retrieving ctrz state directory: %v\n", err)
 	}

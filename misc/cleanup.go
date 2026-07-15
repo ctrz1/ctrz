@@ -43,7 +43,7 @@ const (
 )
 
 func RemoveContainerByName(name string, forceKill bool) error {
-	dir, err := ctrzStateDir()
+	dir, err := CtrzStateDir()
 	if err != nil {
 		return err
 	}
