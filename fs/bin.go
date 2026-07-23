@@ -1,12 +1,26 @@
 package fs
 
 import (
+	"fmt"
 	"io"
 	"os"
 	"path/filepath"
+	"strings"
 )
 
 func InjectBinary(src, dest string) error {
+	zip := filepath.Base(src)
+	_, isZip := strings.CutSuffix(zip, ".tar.gz")
+	if isZip {
+		data, err := os.ReadFile(src)
+		if err != nil {
+			return fmt.Errorf("Error reading zip archive: %v", err)
+		}
+		if err := extractTarGz(data, dest); err != nil {
+			return err
+		}
+		return nil
+	}
 	in, err := os.Open(src)
 	if err != nil {
 		return err

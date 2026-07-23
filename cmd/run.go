@@ -36,7 +36,7 @@ var runCmd = &cobra.Command{
 			}
 		} else {
 			if !misc.CheckContName(name) {
-				log.Fatalf("Container '%s' already exists. Either chose a different name or remove the existing container", name)
+				log.Fatalf("Container '%s' already exists. Either choose a different name or remove the existing container", name)
 			}
 		}
 		pm, err := cmd.Flags().GetStringArray("port")
