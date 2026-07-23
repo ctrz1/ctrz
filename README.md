@@ -11,7 +11,7 @@ To install `ctrz`, you have different options:
 1) Run the following command that will install `ctrz` on your PATH for you:
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/ctrz1/ctrz/main/install.sh | sudo bash
+curl -fsSL https://raw.githubusercontent.com/ctrz1/ctrz/main/install | sudo bash
 ```
 
 2) Manually download a binary for the [build](/build/) directory
