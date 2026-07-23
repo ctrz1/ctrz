@@ -1,0 +1,59 @@
+#!/usr/bin/env bash
+
+set -euo pipefail
+
+VERSION="latest"
+REPO="ctrz1/ctrz"
+INSTALL_DIR="/usr/local/bin"
+
+if [[ "$(uname -s)" != "Linux" ]]; then
+    echo "Error: ctrz is only supported on Linux."
+    exit 1
+fi
+
+if [[ $EUID -ne 0 ]]; then
+    echo "Please run this script with sudo:"
+    echo "  sudo $0"
+    exit 1
+fi
+
+case "$(uname -m)" in
+    x86_64)
+        ARCH="amd64"
+        ;;
+    aarch64)
+        ARCH="arm64"
+        ;;
+    armv7l|armv6l)
+        ARCH="arm"
+        ;;
+    i386|i486|i586|i686)
+        ARCH="386"
+        ;;
+    *)
+        echo "Error: Unsupported architecture: $(uname -m)"
+        exit 1
+        ;;
+esac
+
+if [[ "$VERSION" == "latest" ]]; then
+    URL="https://github.com/$REPO/releases/latest/download/ctrz-linux-$ARCH"
+else
+    URL="https://github.com/$REPO/releases/download/$VERSION/ctrz-linux-$ARCH"
+fi
+
+TMP_FILE="$(mktemp)"
+trap 'rm -f "$TMP_FILE"' EXIT
+
+echo "Downloading ctrz ($ARCH)..."
+
+if ! curl -fsSL -o "$TMP_FILE" "$URL"; then
+    echo "Error: Failed to download ctrz."
+    exit 1
+fi
+
+chmod +x "$TMP_FILE"
+mv "$TMP_FILE" "$INSTALL_DIR/ctrz"
+
+echo "ctrz installed successfully to $INSTALL_DIR/ctrz"
+echo "Run 'ctrz --help' to get started."
