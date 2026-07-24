@@ -19,7 +19,7 @@ func EnsureCtrzRoot() error {
 	if err != nil {
 		return err
 	}
-	
+
 	var enable []string
 	if ctrls["cpu"] {
 		enable = append(enable, "+cpu")

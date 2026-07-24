@@ -44,11 +44,11 @@ var psCmd = &cobra.Command{
 			}
 			created := time.Unix(containerData.StartTime, 0).Format("02/01/2006 15:04:05")
 			fmt.Fprintf(w,
-				"%s\t%d\t%s\t%s\t%s\t%s\n", 
-				containerData.Name, 
-				containerData.PID, 
-				containerData.ContainerIP, 
-				created, 
+				"%s\t%d\t%s\t%s\t%s\t%s\n",
+				containerData.Name,
+				containerData.PID,
+				containerData.ContainerIP,
+				created,
 				containerData.Command,
 				status,
 			)

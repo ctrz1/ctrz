@@ -93,9 +93,9 @@ func ParseProcPIDDev(pid int) (map[string]Interface, error) {
 		}
 		ifaceName := strings.Trim(fields[0], ":")
 		iface[ifaceName] = Interface{
-			Name: ifaceName,
+			Name:          ifaceName,
 			ReceivedBytes: bytesReceived,
-			SentBytes: bytesSent,
+			SentBytes:     bytesSent,
 		}
 		//fmt.Printf("Name: %s, Received: %d, Sent: %d", ifaceName, bytesReceived, bytesSent)
 	}

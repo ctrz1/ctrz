@@ -9,7 +9,7 @@ import (
 
 type CPUStat struct {
 	UsageUsec     uint64
-	NrThrottled  uint64
+	NrThrottled   uint64
 	ThrottledUsec uint64
 }
 
@@ -75,4 +75,3 @@ func ReadMemStat(path string) (*MemStat, error) {
 		Max:     maxVal,
 	}, nil
 }
-

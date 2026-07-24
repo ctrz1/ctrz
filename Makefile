@@ -10,8 +10,8 @@ TARGETS := \
 	linux/386 \
 	linux/arm
 
-VERSION := $(shell git describe --tags --always --dirty)
-COMMIT := $(shell git rev-parse --short HEAD)
+VERSION := $(shell git describe --tags --abbrev=0 2>/dev/null || echo dev)
+COMMIT := $(shell git rev-parse HEAD 2>/dev/null || echo dev)
 DATE := $(shell date -u +%Y-%m-%dT%H:%M:%SZ)
 
 LDFLAGS := -X 'ctrz/misc.Version=$(VERSION)' \

@@ -22,9 +22,9 @@ func CreateNetNs(command []string, maxCpu, name, ip string, detach bool) (int, *
 	proc := exec.Command("/proc/self/exe", args...)
 
 	proc.SysProcAttr = &syscall.SysProcAttr{
-		Cloneflags: 
-			//syscall.CLONE_NEWUSER | --> can be used for rootless containers later. Ignore for now
-			syscall.CLONE_NEWNET |
+		Cloneflags:
+		//syscall.CLONE_NEWUSER | --> can be used for rootless containers later. Ignore for now
+		syscall.CLONE_NEWNET |
 			syscall.CLONE_NEWUTS |
 			syscall.CLONE_NEWPID,
 

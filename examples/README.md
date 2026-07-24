@@ -13,7 +13,7 @@ demo    2185    10.200.1.106    23/07/2026 22:15:56    webserver         active
 
 You can now visit `localhost:8443` to see the homepage. 
 
-Run `sudo ctrz daemon start` to start the ctrz daemon process. This is a simple daemon process that will collect stats of all running containers. To see live stats, run `sudo ctrz status demo`. In a different window, visit (or curl) `localhost:8443/burn`. This will start burning CPU for 60 seconds. On the `ctrz status` tab, notice how the CPU usage does not exceed `50%`. This is because of the `--cpu 50` flag in our run command. If you are accessing the website from a non-localhost address (e.g. `http://raspberrypi.local:8443) you will also see a new established connection. To get the stats collected by the daemon process, simply run:
+Run `sudo ctrz daemon start` to start the ctrz daemon process. This is a simple daemon process that will collect stats of all running containers. To see live stats, run `sudo ctrz status demo`. In a different window, visit (or curl) `localhost:8443/burn`. This will start burning CPU for 60 seconds (the webserver also supports query parameters to indicate how long to burn CPU and how many workers to use `/burn?seconds=30&workers=3`). On the `ctrz status` tab, notice how the CPU usage does not exceed `50%`. This is because of the `--cpu 50` flag in our run command. If you are accessing the website from a non-localhost address (e.g. http://raspberrypi.local:8443) you will also see a new established connection. To get the stats collected by the daemon process, simply run:
 
 ```bash
 sudo ctrz status demo --no-header -o -

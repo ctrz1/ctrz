@@ -78,7 +78,7 @@ var statusCmd = &cobra.Command{
 			}
 			return
 		}
-		
+
 		containerData, err := misc.GetContainerDataFromName(containerName)
 		if err != nil {
 			log.Fatal(err)

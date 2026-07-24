@@ -34,7 +34,7 @@ func ctrzDeamon() {
 	var prevUsec uint64 = 0
 	prevTime := time.Now()
 
-	// CPU usage (%), CPU usec, CPU nr thorttled, CPU throttled usec, current memory usage (KB), max memory usage (KB), 
+	// CPU usage (%), CPU usec, CPU nr thorttled, CPU throttled usec, current memory usage (KB), max memory usage (KB),
 	// recieved network traffic (delta), received network traffic (total), sent network traffic (delta), sent network traffic (total)
 
 	for {
@@ -97,9 +97,9 @@ func ctrzDeamon() {
 				deltaSent := currentSent - prevSentBytes
 				deltaReceived := currentReceived - prevRecBytes
 
-				stats = append(stats, 
+				stats = append(stats,
 					strconv.Itoa(len(sockets)),
-					strconv.FormatUint(deltaReceived,10),
+					strconv.FormatUint(deltaReceived, 10),
 					strconv.FormatUint(currentReceived, 10),
 					strconv.FormatUint(deltaSent, 10),
 					strconv.FormatUint(currentSent, 10),

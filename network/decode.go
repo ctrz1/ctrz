@@ -30,7 +30,7 @@ func ParseProcNetAddr(addr string, ipv6 bool) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	
+
 	if ipv6 {
 		return fmt.Sprintf("[%s]:%d", ip.String(), port), nil
 	} else {

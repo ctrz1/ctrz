@@ -71,7 +71,7 @@ func writeIPToFile(IP, dir string) error {
 		return fmt.Errorf("Error opening IP file: %v\n", err)
 	}
 	defer f.Close()
-	if _, err := f.Write([]byte(fmt.Sprintf("%s\n", IP))); err != nil {
+	if _, err := fmt.Fprintf(f, "%s\n", IP); err != nil {
 		return fmt.Errorf("Error adding container IP to IP file: %v\n", err)
 	}
 	return nil
@@ -104,7 +104,7 @@ func RemoveContIP(containerIP string) error {
 	defer f.Close()
 	for _, ip := range remainingIPs {
 		// If this fails mid-loop, it leaves data inconsistent with existing containers
-		f.Write([]byte(fmt.Sprintf("%s\n", ip)))
+		fmt.Fprintf(f, "%s\n", ip)
 	}
 	return nil
 }

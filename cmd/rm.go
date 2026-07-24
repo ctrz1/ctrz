@@ -12,10 +12,10 @@ import (
 )
 
 var rmCmd = &cobra.Command{
-	Use: "rm",
+	Use:   "rm",
 	Short: "Remove a containern and all of its data (including stats)",
 
-	Run: func(cmd *cobra.Command, args []string)  {
+	Run: func(cmd *cobra.Command, args []string) {
 		name, err := cmd.Flags().GetString("name")
 		if err != nil {
 			log.Fatalf("unable to retrieve name: %v\n", err)

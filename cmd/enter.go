@@ -26,20 +26,20 @@ var enterCmd = &cobra.Command{
 			log.Fatalf("Error retrieving container data: %v\n", err)
 		}
 		if command == "" {
-			command = "sh"	
+			command = "sh"
 		}
 		commandArr := strings.Split(command, " ")
 		path, err := exec.LookPath("nsenter")
 		if err != nil {
-		    log.Fatal("nsenter not found in PATH")
+			log.Fatal("nsenter not found in PATH")
 		}
 
 		if err := unix.Exec(
-		    path,
-		    append([]string{"nsenter", "-a", "-t", strconv.Itoa(containerData.PID)}, commandArr...),
-		    os.Environ(),
+			path,
+			append([]string{"nsenter", "-a", "-t", strconv.Itoa(containerData.PID)}, commandArr...),
+			os.Environ(),
 		); err != nil {
-		    log.Fatal(err)
+			log.Fatal(err)
 		}
 	},
 }

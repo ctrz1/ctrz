@@ -7,28 +7,28 @@ import (
 	"fmt"
 	"log"
 
-	"ctrz/proc"
 	"ctrz/cgroup"
+	"ctrz/proc"
 
 	"github.com/spf13/cobra"
 )
 
 var wrapCmd = &cobra.Command{
-    Use:   "wrap",
-    Short: "'wrap' a process in a new cgroup",
-    Run: func(cmd *cobra.Command, args []string) {
-        pid, err := cmd.Flags().GetInt("pid")
+	Use:   "wrap",
+	Short: "'wrap' a process in a new cgroup",
+	Run: func(cmd *cobra.Command, args []string) {
+		pid, err := cmd.Flags().GetInt("pid")
 		if err != nil {
 			log.Fatalf("Unable to retrieve pid: %v", pid)
 		}
 
 		if err := cgroup.EnsureCtrzRoot(); err != nil {
-        	log.Fatalf("cgroup init failed: %v", err)
-    	}
+			log.Fatalf("cgroup init failed: %v", err)
+		}
 
 		info, err := proc.Inspect(pid)
 		if err != nil {
-			log.Fatal(err)			
+			log.Fatal(err)
 		}
 		fmt.Println(info.String())
 		period, err := cmd.Flags().GetInt("period")
@@ -53,10 +53,10 @@ var wrapCmd = &cobra.Command{
 			quota := cpu * 1000
 			maxCpu = fmt.Sprintf("%d 100000", quota)
 		}
-    	if err := cgroup.CreateAndAttach(pid, maxCpu); err != nil {
-    	    log.Fatal(err)
-    	}
-    },
+		if err := cgroup.CreateAndAttach(pid, maxCpu); err != nil {
+			log.Fatal(err)
+		}
+	},
 }
 
 func init() {

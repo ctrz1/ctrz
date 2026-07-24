@@ -21,7 +21,7 @@ func TestPathForPID(t *testing.T) {
 			name:     "basic PID",
 			pid:      -3,
 			expected: "",
-			wantErr: true,
+			wantErr:  true,
 		},
 	}
 

@@ -8,7 +8,7 @@
 
 To install `ctrz`, you have different options:
 
-1) Run the following command that will install `ctrz` on your PATH for you:
+1) Run the following command that will install `ctrz` on your PATH for you via the [install script](/install):
 
 ```bash
 curl -fsSL https://raw.githubusercontent.com/ctrz1/ctrz/main/install | sudo bash

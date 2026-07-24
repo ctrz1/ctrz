@@ -2,7 +2,7 @@
 
 set -euo pipefail
 
-VERSION="latest"
+VERSION="${1:-latest}"
 REPO="ctrz1/ctrz"
 INSTALL_DIR="/usr/local/bin"
 

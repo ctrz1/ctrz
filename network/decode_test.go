@@ -49,15 +49,15 @@ func TestParseProcNetAddr(t *testing.T) {
 			expected: "[::1]:53",
 		},
 		{
-			name: "ipv6 unspecified address",
-			input: "00000000000000000000000000000000:1F90",
-			ipv6: true,
+			name:     "ipv6 unspecified address",
+			input:    "00000000000000000000000000000000:1F90",
+			ipv6:     true,
 			expected: "[::]:8080", // net.IP.String() compresses 0s
 		},
 		{
-			name: "ipv6 typical mixed zero pattern",
+			name:  "ipv6 typical mixed zero pattern",
 			input: "00000000000000000000FFFF0A00000C:20FB",
-			ipv6: true,
+			ipv6:  true,
 			//expected: "[::ffff:10.0.0.12]:8443",
 			expected: "[10.0.0.12]:8443", // IPv4 mapped to IPv6
 		},

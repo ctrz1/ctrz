@@ -2,6 +2,7 @@ package network
 
 import (
 	"fmt"
+	"maps"
 	"os"
 	"path/filepath"
 	"strconv"
@@ -22,9 +23,7 @@ func ResolveSockets(pid int) ([]NetSocket, error) {
 
 	index := map[uint64]NetSocket{}
 	for _, m := range []map[uint64]NetSocket{tcp, tcp6, udp, udp6} {
-		for k, v := range m {
-			index[k] = v
-		}
+		maps.Copy(index, m)
 	}
 
 	var out []NetSocket
@@ -42,7 +41,6 @@ func ResolveSockets(pid int) ([]NetSocket, error) {
 
 	return out, nil
 }
-
 
 func SocketFDs(pid int) ([]SocketFD, error) {
 	dir := fmt.Sprintf("/proc/%d/fd", pid)
