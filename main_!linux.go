@@ -3,9 +3,9 @@
 package main
 
 import (
-	"fmt"
+	"log/slog"
 )
 
 func main() {
-	fmt.Println("ctrz is currently only available for linux")
+	slog.Error("ctrz is currently only available for linux")
 }

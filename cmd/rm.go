@@ -4,10 +4,12 @@
 package cmd
 
 import (
+	"fmt"
 	"log"
 
 	"ctrz/misc"
 	"ctrz/proc"
+
 	"github.com/spf13/cobra"
 )
 
@@ -43,7 +45,9 @@ var rmCmd = &cobra.Command{
 					continue
 				}
 				if !proc.IsProcActive(containerMeta.PID) || all {
-					misc.RemoveContainerByName(c, forceKill)
+					if err := misc.RemoveContainerByName(c, forceKill); err != nil {
+						fmt.Printf("Error removing container: %v\n", err)
+					}
 				}
 			}
 			return

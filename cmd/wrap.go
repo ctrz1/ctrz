@@ -61,7 +61,7 @@ var wrapCmd = &cobra.Command{
 func init() {
 	rootCmd.AddCommand(wrapCmd)
 	wrapCmd.Flags().Int("pid", 0, "Process ID of process that you want to 'wrap' in a container")
-	wrapCmd.MarkFlagRequired("pid")
+	_ = wrapCmd.MarkFlagRequired("pid")
 	wrapCmd.Flags().Int("cpu", 100, "Limits the CPU usage (in %) of the wrapped process")
 	wrapCmd.Flags().Int("runtime", 0, "Configures the runtime of a process within a cgroup")
 	wrapCmd.Flags().Int("period", 0, "Determines the time window in which to apply the runtime")

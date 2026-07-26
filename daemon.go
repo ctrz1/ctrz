@@ -6,6 +6,7 @@ import (
 	"encoding/csv"
 	"fmt"
 	"log"
+	"log/slog"
 	"math"
 	"os"
 	"strconv"
@@ -16,6 +17,7 @@ import (
 	"ctrz/cgroup"
 	"ctrz/misc"
 	"ctrz/network"
+
 	"golang.org/x/sys/unix"
 )
 
@@ -24,9 +26,11 @@ func ctrzDeamon() {
 	if err != nil {
 		log.Fatal(err)
 	}
-	unix.Prctl(unix.PR_SET_NAME, uintptr(unsafe.Pointer(
+	if err := unix.Prctl(unix.PR_SET_NAME, uintptr(unsafe.Pointer(
 		ptr,
-	)), 0, 0, 0)
+	)), 0, 0, 0); err != nil {
+		slog.Error("Couldn't set process name of ctrz daemon")
+	}
 
 	var prevRecBytes uint64 = 0
 	var prevSentBytes uint64 = 0
@@ -83,7 +87,7 @@ func ctrzDeamon() {
 				mem, err := cgroup.ReadMemStat(path)
 				if err == nil {
 					stats = append(stats, strconv.FormatFloat(float64(mem.Current/1024), 'f', 2, 64))
-					if !(mem.Max > math.MaxInt64-1024 || mem.Max == 0) {
+					if mem.Max <= math.MaxInt64-1024 && mem.Max != 0 {
 						stats = append(stats, strconv.FormatFloat(float64(mem.Max/1024), 'f', 2, 64))
 					}
 				}
@@ -122,6 +126,6 @@ func printStatsToFile(containerName string, elems ...string) {
 		return
 	}
 	w := csv.NewWriter(f)
-	w.Write(elems)
+	_ = w.Write(elems)
 	w.Flush()
 }
