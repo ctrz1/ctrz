@@ -1,14 +1,14 @@
 package cmd
 
 import (
-	"ctrz/misc"
-	"ctrz/proc"
 	"fmt"
 	"log"
 	"os"
 	"text/tabwriter"
 	"time"
 
+	"ctrz/misc"
+	"ctrz/proc"
 	"github.com/spf13/cobra"
 )
 
@@ -23,12 +23,20 @@ var psCmd = &cobra.Command{
 		}
 
 		w := tabwriter.NewWriter(os.Stdout, 0, 0, 4, ' ', 0)
-		defer w.Flush()
+		defer func() {
+			if err := w.Flush(); err != nil {
+				log.Fatal(err)
+			}
+		}()
 
-		fmt.Fprintln(w)
-		//fmt.Fprintln(w, "-------------------------------------------------------------------------------")
-		fmt.Fprintln(w, "Name\tPID\tIP\tCreated\tCommand\tStatus")
-		//fmt.Fprintln(w, "-------------------------------------------------------------------------------")
+		if _, err := fmt.Fprintln(w); err != nil {
+			log.Fatal(err)
+		}
+		// fmt.Fprintln(w, "-------------------------------------------------------------------------------")
+		if _, err := fmt.Fprintln(w, "Name\tPID\tIP\tCreated\tCommand\tStatus"); err != nil {
+			log.Fatal(err)
+		}
+		// fmt.Fprintln(w, "-------------------------------------------------------------------------------")
 
 		for _, c := range containers {
 			containerData, err := misc.GetContainerDataFromName(c)
@@ -43,7 +51,7 @@ var psCmd = &cobra.Command{
 				status = "inactive"
 			}
 			created := time.Unix(containerData.StartTime, 0).Format("02/01/2006 15:04:05")
-			fmt.Fprintf(w,
+			if _, err := fmt.Fprintf(w,
 				"%s\t%d\t%s\t%s\t%s\t%s\n",
 				containerData.Name,
 				containerData.PID,
@@ -51,7 +59,9 @@ var psCmd = &cobra.Command{
 				created,
 				containerData.Command,
 				status,
-			)
+			); err != nil {
+				log.Fatal(err)
+			}
 		}
 	},
 }

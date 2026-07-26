@@ -4,10 +4,10 @@
 package cmd
 
 import (
-	"ctrz/misc"
-	"ctrz/proc"
 	"log"
 
+	"ctrz/misc"
+	"ctrz/proc"
 	"github.com/spf13/cobra"
 )
 

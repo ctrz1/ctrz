@@ -15,7 +15,7 @@ func ResolveSockets(pid int) ([]NetSocket, error) {
 		return nil, err
 	}
 
-	//TODO: error handling
+	// TODO: error handling
 	tcp, _ := ParseProcNet("tcp", pid)
 	tcp6, _ := ParseProcNet("tcp6", pid)
 	udp, _ := ParseProcNet("udp", pid)

@@ -10,7 +10,7 @@ const CtrzRoot = "/sys/fs/cgroup/ctrz"
 
 func EnsureCtrzRoot() error {
 	if _, err := os.Stat(CtrzRoot); os.IsNotExist(err) {
-		if err := os.Mkdir(CtrzRoot, 0755); err != nil {
+		if err := os.Mkdir(CtrzRoot, 0o755); err != nil {
 			return err
 		}
 	}
@@ -35,6 +35,6 @@ func EnsureCtrzRoot() error {
 	return os.WriteFile(
 		filepath.Join(CtrzRoot, "cgroup.subtree_control"),
 		[]byte(strings.Join(enable, " ")),
-		0644,
+		0o644,
 	)
 }

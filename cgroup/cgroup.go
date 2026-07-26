@@ -12,16 +12,16 @@ func CreateAndAttach(pid int, cpuMax string) error {
 		return err
 	}
 
-	if err := os.Mkdir(group, 0755); err != nil && !os.IsExist(err) {
+	if err := os.Mkdir(group, 0o755); err != nil && !os.IsExist(err) {
 		return err
 	}
 
-	if err := os.WriteFile(filepath.Join(group, "cpu.max"), []byte(cpuMax), 0644); err != nil {
+	if err := os.WriteFile(filepath.Join(group, "cpu.max"), []byte(cpuMax), 0o644); err != nil {
 		return err
 	}
 
 	if err := os.WriteFile(filepath.Join(group, "cgroup.procs"),
-		[]byte(fmt.Sprintf("%d", pid)), 0644); err != nil {
+		[]byte(fmt.Sprintf("%d", pid)), 0o644); err != nil {
 		return err
 	}
 

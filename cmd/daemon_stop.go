@@ -1,14 +1,14 @@
 package cmd
 
 import (
-	"ctrz/misc"
-	"ctrz/proc"
 	"log"
 	"os"
 	"os/exec"
 	"path/filepath"
 	"strconv"
 
+	"ctrz/misc"
+	"ctrz/proc"
 	"github.com/spf13/cobra"
 )
 
@@ -29,6 +29,9 @@ var daemonStopCmd = &cobra.Command{
 		}
 		pidS := string(data)
 		pid, err := strconv.Atoi(string(data))
+		if err != nil {
+			log.Fatal(err)
+		}
 		if proc.IsProcActive(pid) {
 			out, err := exec.Command("kill", pidS).CombinedOutput()
 			if err != nil {

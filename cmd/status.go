@@ -18,7 +18,6 @@ import (
 	"ctrz/cgroup"
 	"ctrz/misc"
 	"ctrz/network"
-
 	"github.com/spf13/cobra"
 )
 
@@ -64,7 +63,7 @@ var statusCmd = &cobra.Command{
 				if _, err := os.Stat(output); err == nil {
 					log.Fatal("The chosen output file already exists. If you want to append stats to a file, please use 'ctrz status [name] -o - >> someFile.csv'")
 				}
-				f, err := os.OpenFile(output, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0755)
+				f, err := os.OpenFile(output, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0o755)
 				if err != nil {
 					log.Fatal(err)
 				}
@@ -147,11 +146,9 @@ var statusCmd = &cobra.Command{
 			} else if len(sockets) > 0 {
 				currentSent, err := strconv.ParseUint(sockets[0].ReceivedBytes, 10, 64)
 				if err != nil {
-
 				}
 				currentReceived, err := strconv.ParseUint(sockets[0].SentBytes, 10, 64)
 				if err != nil {
-
 				}
 				deltaSent := currentSent - prevSentBytes
 				deltaReceived := currentReceived - prevRecBytes

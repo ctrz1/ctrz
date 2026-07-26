@@ -3,8 +3,9 @@
 package main
 
 import (
-	"ctrz/cmd"
 	"os"
+
+	"ctrz/cmd"
 )
 
 func main() {

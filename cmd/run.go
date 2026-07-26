@@ -4,12 +4,12 @@
 package cmd
 
 import (
-	"ctrz/misc"
-	"ctrz/network"
 	"fmt"
 	"log"
 	"syscall"
 
+	"ctrz/misc"
+	"ctrz/network"
 	"github.com/spf13/cobra"
 )
 

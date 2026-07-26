@@ -4,13 +4,14 @@
 package network
 
 import (
-	"ctrz/cgroup"
-	"ctrz/misc"
 	"fmt"
 	"os/exec"
 	"strconv"
 	"strings"
 	"syscall"
+
+	"ctrz/cgroup"
+	"ctrz/misc"
 )
 
 // TODO: This function should no longer be in the network package. It should also be renamed. It has gone way beyond it's original scope
@@ -23,7 +24,7 @@ func CreateNetNs(command []string, maxCpu, name, ip string, detach bool) (int, *
 
 	proc.SysProcAttr = &syscall.SysProcAttr{
 		Cloneflags:
-		//syscall.CLONE_NEWUSER | --> can be used for rootless containers later. Ignore for now
+		// syscall.CLONE_NEWUSER | --> can be used for rootless containers later. Ignore for now
 		syscall.CLONE_NEWNET |
 			syscall.CLONE_NEWUTS |
 			syscall.CLONE_NEWPID,
@@ -177,7 +178,7 @@ func SetupNetns(containerIP string) error {
 	return nil
 }
 
-func ExposePort(ports string, containerIP string) (int, int, error) {
+func ExposePort(ports, containerIP string) (int, int, error) {
 	pm, err := parsePorts(ports)
 	if err != nil {
 		return -1, -1, err
@@ -278,7 +279,7 @@ func ruleExists(args ...string) (bool, error) {
 	return false, err
 }
 
-func ensureRule(checkArgs []string, addArgs []string) error {
+func ensureRule(checkArgs, addArgs []string) error {
 	exists, err := ruleExists(checkArgs...)
 	if err != nil {
 		return err

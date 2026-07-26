@@ -1,9 +1,6 @@
 package cmd
 
 import (
-	"ctrz/cgroup"
-	"ctrz/misc"
-	"ctrz/proc"
 	"fmt"
 	"log"
 	"os"
@@ -11,6 +8,9 @@ import (
 	"path/filepath"
 	"strconv"
 
+	"ctrz/cgroup"
+	"ctrz/misc"
+	"ctrz/proc"
 	"github.com/spf13/cobra"
 )
 
@@ -44,10 +44,10 @@ var startDaemonCmd = &cobra.Command{
 		if err := cgroup.CreateAndAttach(d.Process.Pid, "100000 100000"); err != nil {
 			log.Fatal(err)
 		}
-		if err := os.MkdirAll(dir, 0755); err != nil {
+		if err := os.MkdirAll(dir, 0o755); err != nil {
 			log.Fatal(err)
 		}
-		if err := os.WriteFile(path, []byte(strconv.Itoa(d.Process.Pid)), 0755); err != nil {
+		if err := os.WriteFile(path, []byte(strconv.Itoa(d.Process.Pid)), 0o755); err != nil {
 			log.Fatal(err)
 		}
 		fmt.Printf("Started daemon process: %d\n", d.Process.Pid)

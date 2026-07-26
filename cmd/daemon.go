@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"log"
 	"os"
 
 	"github.com/spf13/cobra"
@@ -11,7 +12,9 @@ var daemonCmd = &cobra.Command{
 	Short: "control ctrz daemon process",
 	Args:  cobra.ExactArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
-		cmd.Usage()
+		if err := cmd.Usage(); err != nil {
+			log.Fatal(err)
+		}
 		os.Exit(1)
 	},
 }

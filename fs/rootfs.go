@@ -5,6 +5,7 @@ import (
 	"bytes"
 	"compress/gzip"
 	_ "embed"
+	"errors"
 	"fmt"
 	"io"
 	"os"
@@ -21,7 +22,7 @@ func MountRootFs(containerID string) (string, error) {
 		containerID,
 	)
 
-	if err := os.MkdirAll(rootfsDir, 0755); err != nil {
+	if err := os.MkdirAll(rootfsDir, 0o755); err != nil {
 		return "", err
 	}
 
@@ -32,12 +33,14 @@ func MountRootFs(containerID string) (string, error) {
 	return fmt.Sprintf("%s/rootfs", rootfsDir), nil
 }
 
-func extractTarGz(data []byte, dest string) error {
+func extractTarGz(data []byte, dest string) (err error) {
 	gzr, err := gzip.NewReader(bytes.NewReader(data))
 	if err != nil {
 		return fmt.Errorf("Error creating gzip reader: %v", err)
 	}
-	defer gzr.Close()
+	defer func() {
+		err = errors.Join(err, gzr.Close())
+	}()
 
 	tr := tar.NewReader(gzr)
 
@@ -65,7 +68,7 @@ func extractTarGz(data []byte, dest string) error {
 				return fmt.Errorf("Error creating dir %s: %w", cleanTarget, err)
 			}
 		case tar.TypeReg:
-			if err := os.MkdirAll(filepath.Dir(cleanTarget), 0755); err != nil {
+			if err := os.MkdirAll(filepath.Dir(cleanTarget), 0o755); err != nil {
 				return fmt.Errorf("Error creating parent dir: %v", err)
 			}
 			f, err := os.OpenFile(
@@ -87,7 +90,7 @@ func extractTarGz(data []byte, dest string) error {
 			}
 
 		case tar.TypeSymlink:
-			if err := os.MkdirAll(filepath.Dir(cleanTarget), 0755); err != nil {
+			if err := os.MkdirAll(filepath.Dir(cleanTarget), 0o755); err != nil {
 				return err
 			}
 

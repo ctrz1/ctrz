@@ -1,6 +1,7 @@
 package fs
 
 import (
+	"errors"
 	"fmt"
 	"io"
 	"os"
@@ -8,7 +9,7 @@ import (
 	"strings"
 )
 
-func InjectBinary(src, dest string) error {
+func InjectBinary(src, dest string) (err error) {
 	zip := filepath.Base(src)
 	_, isZip := strings.CutSuffix(zip, ".tar.gz")
 	if isZip {
@@ -25,9 +26,11 @@ func InjectBinary(src, dest string) error {
 	if err != nil {
 		return err
 	}
-	defer in.Close()
+	defer func() {
+		err = errors.Join(err, in.Close())
+	}()
 
-	if err := os.MkdirAll(dest, 0755); err != nil {
+	if err := os.MkdirAll(dest, 0o755); err != nil {
 		return err
 	}
 
@@ -44,7 +47,9 @@ func InjectBinary(src, dest string) error {
 	if err != nil {
 		return err
 	}
-	defer out.Close()
+	defer func() {
+		err = errors.Join(err, out.Close())
+	}()
 
 	if _, err := io.Copy(out, in); err != nil {
 		return err

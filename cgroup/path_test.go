@@ -5,7 +5,6 @@ import (
 )
 
 func TestPathForPID(t *testing.T) {
-
 	tests := []struct {
 		name     string
 		pid      int
@@ -36,5 +35,4 @@ func TestPathForPID(t *testing.T) {
 			}
 		})
 	}
-
 }

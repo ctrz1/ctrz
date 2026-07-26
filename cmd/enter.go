@@ -1,13 +1,13 @@
 package cmd
 
 import (
-	"ctrz/misc"
 	"log"
 	"os"
 	"os/exec"
 	"strconv"
 	"strings"
 
+	"ctrz/misc"
 	"github.com/spf13/cobra"
 	"golang.org/x/sys/unix"
 )

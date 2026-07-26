@@ -1,9 +1,10 @@
 package proc
 
 import (
-	"ctrz/cgroup"
 	"os"
 	"path/filepath"
+
+	"ctrz/cgroup"
 )
 
 func IsProcActive(pid int) bool {

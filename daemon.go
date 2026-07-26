@@ -3,9 +3,6 @@
 package main
 
 import (
-	"ctrz/cgroup"
-	"ctrz/misc"
-	"ctrz/network"
 	"encoding/csv"
 	"fmt"
 	"log"
@@ -16,6 +13,9 @@ import (
 	"time"
 	"unsafe"
 
+	"ctrz/cgroup"
+	"ctrz/misc"
+	"ctrz/network"
 	"golang.org/x/sys/unix"
 )
 
@@ -117,7 +117,7 @@ func ctrzDeamon() {
 
 func printStatsToFile(containerName string, elems ...string) {
 	path := fmt.Sprintf("/var/lib/ctrz/containers/%s/stats.csv", containerName)
-	f, err := os.OpenFile(path, os.O_CREATE|os.O_APPEND|os.O_WRONLY, 0755)
+	f, err := os.OpenFile(path, os.O_CREATE|os.O_APPEND|os.O_WRONLY, 0o755)
 	if err != nil {
 		return
 	}

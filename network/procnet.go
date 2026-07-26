@@ -14,10 +14,7 @@ func ParseProcNet(proto string, pid int) (map[uint64]NetSocket, error) {
 		return nil, err
 	}
 
-	ipV6 := false
-	if proto == "tcp6" || proto == "udp6" {
-		ipV6 = true
-	}
+	ipV6 := (proto == "tcp6" || proto == "udp6")
 
 	lines := strings.Split(string(data), "\n")
 	sockets := make(map[uint64]NetSocket)
@@ -43,6 +40,9 @@ func ParseProcNet(proto string, pid int) (map[uint64]NetSocket, error) {
 		}
 
 		iface, err := ParseProcPIDDev(pid)
+		if err != nil {
+			continue
+		}
 
 		var bytesSent uint64 = 0
 		var bytesReceived uint64 = 0
@@ -97,7 +97,7 @@ func ParseProcPIDDev(pid int) (map[string]Interface, error) {
 			ReceivedBytes: bytesReceived,
 			SentBytes:     bytesSent,
 		}
-		//fmt.Printf("Name: %s, Received: %d, Sent: %d", ifaceName, bytesReceived, bytesSent)
+		// fmt.Printf("Name: %s, Received: %d, Sent: %d", ifaceName, bytesReceived, bytesSent)
 	}
 	return iface, nil
 }

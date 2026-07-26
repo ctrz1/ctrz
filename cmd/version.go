@@ -4,9 +4,9 @@
 package cmd
 
 import (
-	"ctrz/misc"
 	"fmt"
 
+	"ctrz/misc"
 	"github.com/spf13/cobra"
 )
 

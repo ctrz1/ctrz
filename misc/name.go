@@ -1,7 +1,6 @@
 package misc
 
 import (
-	"ctrz/cgroup"
 	"encoding/json"
 	"fmt"
 	"log"
@@ -10,14 +9,16 @@ import (
 	"path/filepath"
 	"strings"
 	"time"
+
+	"ctrz/cgroup"
 )
 
-func AttachNameToPID(pid int, name string, args []string, containerIP string, containerPort []int, hostPort []int) error {
+func AttachNameToPID(pid int, name string, args []string, containerIP string, containerPort, hostPort []int) error {
 	path, err := CtrzStateDir()
 	if err != nil {
 		return fmt.Errorf("Error attaching name to PID: %v", err)
 	}
-	err = os.MkdirAll(filepath.Join(path, "containers", name), 0755)
+	err = os.MkdirAll(filepath.Join(path, "containers", name), 0o755)
 	if err != nil {
 		return fmt.Errorf("Error attaching name to PID: %v", err)
 	}
@@ -47,7 +48,7 @@ func AttachNameToPID(pid int, name string, args []string, containerIP string, co
 		fmt.Println("Error")
 		return err
 	}
-	err = os.WriteFile(filepath.Join(path, "containers", name, fmt.Sprintf("%s.json", name)), metaJson, 0644)
+	err = os.WriteFile(filepath.Join(path, "containers", name, fmt.Sprintf("%s.json", name)), metaJson, 0o644)
 	if err != nil {
 		return fmt.Errorf("Error attaching name to PID: %v", err)
 	}
@@ -66,7 +67,7 @@ func CtrzStateDir() (string, error) {
 }
 
 func GetPIDFromName(name string) (int, error) {
-	//TODO
+	// TODO
 	return 0, nil
 }
 
