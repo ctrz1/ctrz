@@ -1,3 +1,7 @@
+
+<img src="./examples/assets/logo.png" width="300" style="display: block; margin: auto;">
+
+
 # ctrz
 
 `ctrz` is an image-less ad-hoc containerisation runtime. It lets you run statically linked binaries in an isolated environment. Find some [documentation](/examples/README.md) on how to use `ctrz`.
@@ -14,5 +18,5 @@ To install `ctrz`, you have different options:
 curl -fsSL https://raw.githubusercontent.com/ctrz1/ctrz/main/install | sudo bash
 ```
 
-2) Manually download a binary for the [build](/build/) directory
+2) Manually download a binary from the [releases](https://github.com/ctrz1/ctrz/releases)
 3) Clone the repo and build the project yourself using `make build`.
