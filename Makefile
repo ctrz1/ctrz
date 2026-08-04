@@ -35,7 +35,7 @@ release: test
 	done
 
 test:
-	go test ctrz/cgroup ctrz/misc ctrz/network ctrz/proc -vet=all
+	go test ctrz/cgroup ctrz/misc ctrz/network ctrz/proc ctrz/fs -vet=all
 
 clean:
 	rm -rf $(BUILD_DIR)

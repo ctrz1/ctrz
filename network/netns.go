@@ -227,7 +227,7 @@ func ExposePort(ports, containerIP string) (int, int, error) {
 func parsePorts(ports string) (PortMapping, error) {
 	parts := strings.Split(ports, ":")
 	if len(parts) != 2 {
-		return PortMapping{}, fmt.Errorf("invalid port mapping")
+		return PortMapping{}, fmt.Errorf("invalid port mapping: %s", ports)
 	}
 	hp, err := strconv.Atoi(parts[0])
 	if err != nil {
@@ -236,6 +236,9 @@ func parsePorts(ports string) (PortMapping, error) {
 	cp, err := strconv.Atoi(parts[1])
 	if err != nil {
 		return PortMapping{}, fmt.Errorf("Invalid container port: %s: %v", parts[1], err)
+	}
+	if cp < 1 || hp < 1 || cp > 65535 || hp > 65535{
+		return PortMapping{}, fmt.Errorf("invalid port mapping: %s", ports)
 	}
 	return PortMapping{hp, cp}, nil
 }
