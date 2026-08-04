@@ -237,7 +237,7 @@ func parsePorts(ports string) (PortMapping, error) {
 	if err != nil {
 		return PortMapping{}, fmt.Errorf("Invalid container port: %s: %v", parts[1], err)
 	}
-	if cp < 1 || hp < 1 || cp > 65535 || hp > 65535{
+	if cp < 1 || hp < 1 || cp > 65535 || hp > 65535 {
 		return PortMapping{}, fmt.Errorf("invalid port mapping: %s", ports)
 	}
 	return PortMapping{hp, cp}, nil
