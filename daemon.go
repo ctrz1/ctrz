@@ -15,8 +15,8 @@ import (
 	"unsafe"
 
 	"ctrz/cgroup"
-	"ctrz/misc"
 	"ctrz/network"
+	"ctrz/runtime"
 
 	"golang.org/x/sys/unix"
 )
@@ -42,7 +42,7 @@ func ctrzDeamon() {
 	// recieved network traffic (delta), received network traffic (total), sent network traffic (delta), sent network traffic (total)
 
 	for {
-		containers, err := misc.RetrieveAllContainers()
+		containers, err := runtime.RetrieveAllContainers()
 		if err != nil || len(containers) == 0 || containers == nil {
 			time.Sleep(time.Second)
 			continue
@@ -51,7 +51,7 @@ func ctrzDeamon() {
 
 			var stats []string
 
-			containerData, err := misc.GetContainerDataFromName(container)
+			containerData, err := runtime.GetContainerDataFromName(container)
 			if err != nil {
 				continue
 			}

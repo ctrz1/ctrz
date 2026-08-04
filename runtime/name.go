@@ -1,4 +1,4 @@
-package misc
+package runtime
 
 import (
 	"encoding/json"
@@ -22,7 +22,6 @@ func AttachNameToPID(pid int, name string, args []string, containerIP string, co
 	if err != nil {
 		return fmt.Errorf("Error attaching name to PID: %v", err)
 	}
-	// TODO: Include process start time here
 	var command string
 	for _, v := range args {
 		command += fmt.Sprintf("%s ", v)

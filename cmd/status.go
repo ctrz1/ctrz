@@ -16,8 +16,9 @@ import (
 	"time"
 
 	"ctrz/cgroup"
-	"ctrz/misc"
 	"ctrz/network"
+	"ctrz/runtime"
+
 	"github.com/spf13/cobra"
 )
 
@@ -36,7 +37,7 @@ var statusCmd = &cobra.Command{
 			log.Fatal(err)
 		}
 		if output != "" {
-			path, err := misc.CtrzStateDir()
+			path, err := runtime.CtrzStateDir()
 			if err != nil {
 				log.Fatal(err)
 			}
@@ -78,7 +79,7 @@ var statusCmd = &cobra.Command{
 			return
 		}
 
-		containerData, err := misc.GetContainerDataFromName(containerName)
+		containerData, err := runtime.GetContainerDataFromName(containerName)
 		if err != nil {
 			log.Fatal(err)
 		}

@@ -7,8 +7,9 @@ import (
 	"text/tabwriter"
 	"time"
 
-	"ctrz/misc"
 	"ctrz/proc"
+	"ctrz/runtime"
+
 	"github.com/spf13/cobra"
 )
 
@@ -17,7 +18,7 @@ var psCmd = &cobra.Command{
 	Short: "Print list of (running) containers",
 	Args:  cobra.ExactArgs(0),
 	Run: func(cmd *cobra.Command, args []string) {
-		containers, err := misc.RetrieveAllContainers()
+		containers, err := runtime.RetrieveAllContainers()
 		if err != nil {
 			log.Fatalf("Error retrieving containers: %v\n", err)
 		}
@@ -39,7 +40,7 @@ var psCmd = &cobra.Command{
 		// fmt.Fprintln(w, "-------------------------------------------------------------------------------")
 
 		for _, c := range containers {
-			containerData, err := misc.GetContainerDataFromName(c)
+			containerData, err := runtime.GetContainerDataFromName(c)
 			if err != nil {
 				fmt.Printf("Error getting container info: %v\n", err)
 				continue

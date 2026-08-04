@@ -7,8 +7,9 @@ import (
 	"path/filepath"
 	"strconv"
 
-	"ctrz/misc"
 	"ctrz/proc"
+	"ctrz/runtime"
+
 	"github.com/spf13/cobra"
 )
 
@@ -17,7 +18,7 @@ var daemonStopCmd = &cobra.Command{
 	Short: "Stop ctrz daemon process",
 	Args:  cobra.ExactArgs(0),
 	Run: func(cmd *cobra.Command, args []string) {
-		dir, err := misc.CtrzStateDir()
+		dir, err := runtime.CtrzStateDir()
 		path := filepath.Join(dir, "daemon")
 
 		if err != nil {

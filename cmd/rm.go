@@ -7,8 +7,9 @@ import (
 	"fmt"
 	"log"
 
-	"ctrz/misc"
+	"ctrz/network"
 	"ctrz/proc"
+	"ctrz/runtime"
 
 	"github.com/spf13/cobra"
 )
@@ -35,24 +36,24 @@ var rmCmd = &cobra.Command{
 			log.Fatalf("unable to retrieve all: %v\n", err)
 		}
 		if inactive || all {
-			containers, err := misc.RetrieveAllContainers()
+			containers, err := runtime.RetrieveAllContainers()
 			if err != nil {
 				log.Fatalf("Could not retrieve list of containers: %v\n", err)
 			}
 			for _, c := range containers {
-				containerMeta, err := misc.GetContainerDataFromName(c)
+				containerMeta, err := runtime.GetContainerDataFromName(c)
 				if err != nil {
 					continue
 				}
 				if !proc.IsProcActive(containerMeta.PID) || all {
-					if err := misc.RemoveContainerByName(c, forceKill); err != nil {
+					if err := network.RemoveContainerByName(c, forceKill); err != nil {
 						fmt.Printf("Error removing container: %v\n", err)
 					}
 				}
 			}
 			return
 		}
-		if err := misc.RemoveContainerByName(name, forceKill); err != nil {
+		if err := network.RemoveContainerByName(name, forceKill); err != nil {
 			log.Fatalf("Error cleaning up container: %v", err)
 		}
 	},

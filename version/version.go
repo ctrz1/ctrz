@@ -1,4 +1,4 @@
-package misc
+package version
 
 // version information
 var (

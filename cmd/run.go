@@ -8,8 +8,9 @@ import (
 	"log"
 	"syscall"
 
-	"ctrz/misc"
 	"ctrz/network"
+	"ctrz/runtime"
+
 	"github.com/spf13/cobra"
 )
 
@@ -30,12 +31,12 @@ var runCmd = &cobra.Command{
 			log.Fatal("error retrieving -rm:", err)
 		}
 		if name == "" {
-			name = misc.GenerateRandomContName()
-			for !misc.CheckContName(name) {
-				name = misc.GenerateRandomContName()
+			name = runtime.GenerateRandomContName()
+			for !runtime.CheckContName(name) {
+				name = runtime.GenerateRandomContName()
 			}
 		} else {
-			if !misc.CheckContName(name) {
+			if !runtime.CheckContName(name) {
 				log.Fatalf("Container '%s' already exists. Either choose a different name or remove the existing container", name)
 			}
 		}
@@ -48,13 +49,13 @@ var runCmd = &cobra.Command{
 		if err != nil {
 			log.Fatal(err)
 		}
-		runtime, err := cmd.Flags().GetInt("runtime")
+		rt, err := cmd.Flags().GetInt("runtime")
 		if err != nil {
 			log.Fatal(err)
 		}
 		var maxCpu string
-		if period > 0 && runtime > 0 {
-			maxCpu = fmt.Sprintf("%d %d", runtime, period)
+		if period > 0 && rt > 0 {
+			maxCpu = fmt.Sprintf("%d %d", rt, period)
 		} else {
 			cpu, err := cmd.Flags().GetInt("cpu")
 			if err != nil {
@@ -66,7 +67,7 @@ var runCmd = &cobra.Command{
 			quota := cpu * 1000
 			maxCpu = fmt.Sprintf("%d 100000", quota)
 		}
-		containerIP, err := misc.AssignContIP()
+		containerIP, err := network.AssignContIP()
 		if err != nil {
 			log.Fatal(err)
 		}
@@ -100,7 +101,7 @@ var runCmd = &cobra.Command{
 			hostPorts = append(hostPorts, hostPort)
 			containerPorts = append(containerPorts, containerPort)
 		}
-		err = misc.AttachNameToPID(pid, name, args, containerIP, containerPorts, hostPorts)
+		err = runtime.AttachNameToPID(pid, name, args, containerIP, containerPorts, hostPorts)
 		if err != nil {
 			log.Fatal(err)
 		}
@@ -110,7 +111,7 @@ var runCmd = &cobra.Command{
 			}
 		}
 		if remove && !detach {
-			if err := misc.RemoveContainerByName(name, false); err != nil {
+			if err := network.RemoveContainerByName(name, false); err != nil {
 				log.Fatalf("Error cleaning up container: %v", err)
 			}
 		}
