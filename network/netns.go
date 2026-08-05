@@ -11,7 +11,7 @@ import (
 	"syscall"
 
 	"ctrz/cgroup"
-	"ctrz/misc"
+	"ctrz/logging"
 )
 
 // TODO: This function should no longer be in the network package. It should also be renamed. It has gone way beyond it's original scope
@@ -33,7 +33,7 @@ func CreateNetNs(command []string, maxCpu, name, ip string, detach bool) (int, *
 		GidMappingsEnableSetgroups: false,
 	}
 
-	err := misc.ProcessLogs(name, proc, detach)
+	err := logging.ProcessLogs(name, proc, detach)
 	if err != nil {
 		return 0, nil, err
 	}

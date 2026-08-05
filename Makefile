@@ -14,9 +14,9 @@ VERSION := $(shell git describe --tags --abbrev=0 2>/dev/null || echo dev)
 COMMIT := $(shell git rev-parse HEAD 2>/dev/null || echo dev)
 DATE := $(shell date -u +%Y-%m-%dT%H:%M:%SZ)
 
-LDFLAGS := -X 'ctrz/misc.Version=$(VERSION)' \
-           -X 'ctrz/misc.Commit=$(COMMIT)' \
-           -X 'ctrz/misc.BuildDate=$(DATE)'
+LDFLAGS := -X 'ctrz/version.Version=$(VERSION)' \
+           -X 'ctrz/version.Commit=$(COMMIT)' \
+           -X 'ctrz/version.BuildDate=$(DATE)'
 
 build:
 	@echo "Building binary for GOOS=$(GOOS) and GOARCH=$(GOARCH)"

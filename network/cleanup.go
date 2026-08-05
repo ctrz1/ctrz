@@ -1,12 +1,14 @@
-package misc
+package network
 
 import (
+	"ctrz/runtime"
 	"fmt"
 	"log"
 	"os"
 	"os/exec"
 	"path/filepath"
 	"strconv"
+	"syscall"
 )
 
 const (
@@ -37,40 +39,34 @@ const (
 	CONNECTION_STATES = "--ctstate"
 	CONNTRACK         = "conntrack"
 	TO_DESTINATION    = "--to-destination"
-
-	KILL  = "kill"
-	FORCE = "-9"
 )
 
 func RemoveContainerByName(name string, forceKill bool) error {
-	dir, err := CtrzStateDir()
+	dir, err := runtime.CtrzStateDir()
 	if err != nil {
 		return err
 	}
-	containerData, err := GetContainerDataFromName(name)
+	containerData, err := runtime.GetContainerDataFromName(name)
 	if err != nil {
 		return err
 	}
 	_, err = os.Open(fmt.Sprintf("/proc/%d/stat", containerData.PID))
 	if err == nil {
 		fmt.Printf("Killing process %d\n", containerData.PID)
-		// if err := syscall.Kill(containerData.PID, syscall.SIGKILL); err != nil {
 		if forceKill {
-			out, err := exec.Command(KILL, FORCE, fmt.Sprintf("%d", containerData.PID)).CombinedOutput()
-			if err != nil {
-				return fmt.Errorf("%v: %s", err, out)
+			if err := syscall.Kill(containerData.PID, syscall.SIGKILL); err != nil {
+				return fmt.Errorf("Error killing container: %v\n", err)
 			}
 		} else {
-			out, err := exec.Command(KILL, fmt.Sprintf("%d", containerData.PID)).CombinedOutput()
-			if err != nil {
-				return fmt.Errorf("%v: %s", err, out)
+			if err := syscall.Kill(containerData.PID, syscall.SIGTERM); err != nil {
+				return fmt.Errorf("Error killing container: %v\n", err)
 			}
 		}
 	}
 	if err := removeIPTableRules(containerData); err != nil {
 		log.Fatal(err)
 	}
-	if err := os.RemoveAll(filepath.Join(dir, "containers", name /* fmt.Sprintf("%s.json", name)*/)); err != nil {
+	if err := os.RemoveAll(filepath.Join(dir, "containers", name)); err != nil {
 		return err
 	}
 	if err := RemoveContIP(containerData.ContainerIP); err != nil {
@@ -79,7 +75,7 @@ func RemoveContainerByName(name string, forceKill bool) error {
 	return nil
 }
 
-func removeIPTableRules(container ContainerMeta) error {
+func removeIPTableRules(container runtime.ContainerMeta) error {
 	for i := range container.ContainerPort {
 		cmds := [][]string{
 			{

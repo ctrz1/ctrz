@@ -6,9 +6,11 @@ import (
 	"os/exec"
 	"path/filepath"
 	"strconv"
+	"strings"
 
-	"ctrz/misc"
 	"ctrz/proc"
+	"ctrz/runtime"
+
 	"github.com/spf13/cobra"
 )
 
@@ -17,7 +19,7 @@ var daemonStopCmd = &cobra.Command{
 	Short: "Stop ctrz daemon process",
 	Args:  cobra.ExactArgs(0),
 	Run: func(cmd *cobra.Command, args []string) {
-		dir, err := misc.CtrzStateDir()
+		dir, err := runtime.CtrzStateDir()
 		path := filepath.Join(dir, "daemon")
 
 		if err != nil {
@@ -27,13 +29,17 @@ var daemonStopCmd = &cobra.Command{
 		if err != nil {
 			log.Fatal(err)
 		}
-		pidS := string(data)
-		pid, err := strconv.Atoi(string(data))
+		s := strings.Split(string(data), " ")
+		pid, err := strconv.Atoi(s[0])
 		if err != nil {
 			log.Fatal(err)
 		}
-		if proc.IsProcActive(pid) {
-			out, err := exec.Command("kill", pidS).CombinedOutput()
+		starttime, err := strconv.ParseUint(s[1], 10, 64)
+		if err != nil {
+			log.Fatal(err)
+		}
+		if proc.IsProcActive(pid, starttime) {
+			out, err := exec.Command("kill", strconv.Itoa(pid)).CombinedOutput()
 			if err != nil {
 				log.Fatalf("%v: %s", err, out)
 			}

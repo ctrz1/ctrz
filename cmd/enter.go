@@ -1,13 +1,13 @@
 package cmd
 
 import (
+	"ctrz/runtime"
 	"log"
 	"os"
 	"os/exec"
 	"strconv"
 	"strings"
 
-	"ctrz/misc"
 	"github.com/spf13/cobra"
 	"golang.org/x/sys/unix"
 )
@@ -21,7 +21,7 @@ var enterCmd = &cobra.Command{
 			log.Fatal(err)
 		}
 		containerName := args[0]
-		containerData, err := misc.GetContainerDataFromName(containerName)
+		containerData, err := runtime.GetContainerDataFromName(containerName)
 		if err != nil {
 			log.Fatalf("Error retrieving container data: %v\n", err)
 		}

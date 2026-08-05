@@ -1,4 +1,4 @@
-package misc
+package runtime
 
 import (
 	"encoding/json"
@@ -11,6 +11,7 @@ import (
 	"time"
 
 	"ctrz/cgroup"
+	"ctrz/proc"
 )
 
 func AttachNameToPID(pid int, name string, args []string, containerIP string, containerPort, hostPort []int) error {
@@ -22,7 +23,6 @@ func AttachNameToPID(pid int, name string, args []string, containerIP string, co
 	if err != nil {
 		return fmt.Errorf("Error attaching name to PID: %v", err)
 	}
-	// TODO: Include process start time here
 	var command string
 	for _, v := range args {
 		command += fmt.Sprintf("%s ", v)
@@ -32,15 +32,21 @@ func AttachNameToPID(pid int, name string, args []string, containerIP string, co
 	if err != nil {
 		return err
 	}
+	p, err := proc.ProcessStats(pid)
+	if err != nil {
+		return err
+	}
 	meta := ContainerMeta{
 		PID:           pid,
 		Name:          name,
 		Command:       command,
 		Cgroup:        cgroup,
-		StartTime:     time.Now().Unix(),
+		StartTime:     p.Starttime,
+		Started:       time.Now().Unix(),
 		ContainerIP:   containerIP,
 		ContainerPort: containerPort,
 		HostPort:      hostPort,
+		Stats:         p,
 	}
 	metaJson, err := json.MarshalIndent(meta, "", "  ")
 	fmt.Printf("Container name: %s\n", name)
@@ -67,8 +73,11 @@ func CtrzStateDir() (string, error) {
 }
 
 func GetPIDFromName(name string) (int, error) {
-	// TODO
-	return 0, nil
+	containerData, err := GetContainerDataFromName(name)
+	if err != nil {
+		return 0, fmt.Errorf("Error getting PID: %v", err)
+	}
+	return containerData.PID, nil
 }
 
 func CheckContName(name string) bool {

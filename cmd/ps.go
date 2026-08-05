@@ -7,8 +7,9 @@ import (
 	"text/tabwriter"
 	"time"
 
-	"ctrz/misc"
 	"ctrz/proc"
+	"ctrz/runtime"
+
 	"github.com/spf13/cobra"
 )
 
@@ -17,7 +18,7 @@ var psCmd = &cobra.Command{
 	Short: "Print list of (running) containers",
 	Args:  cobra.ExactArgs(0),
 	Run: func(cmd *cobra.Command, args []string) {
-		containers, err := misc.RetrieveAllContainers()
+		containers, err := runtime.RetrieveAllContainers()
 		if err != nil {
 			log.Fatalf("Error retrieving containers: %v\n", err)
 		}
@@ -39,18 +40,21 @@ var psCmd = &cobra.Command{
 		// fmt.Fprintln(w, "-------------------------------------------------------------------------------")
 
 		for _, c := range containers {
-			containerData, err := misc.GetContainerDataFromName(c)
+			containerData, err := runtime.GetContainerDataFromName(c)
 			if err != nil {
 				fmt.Printf("Error getting container info: %v\n", err)
 				continue
 			}
 			var status string
-			if proc.IsProcActive(containerData.PID) {
-				status = "active"
+			if proc.IsProcActive(containerData.PID, containerData.StartTime) {
+				status = "running"
 			} else {
-				status = "inactive"
+				status = "stopped"
 			}
-			created := time.Unix(containerData.StartTime, 0).Format("02/01/2006 15:04:05")
+			if _, err := proc.ProcessStats(containerData.PID); err != nil {
+				status = "dangling"
+			}
+			created := time.Unix(containerData.Started, 0).Format("02/01/2006 15:04:05")
 			if _, err := fmt.Fprintf(w,
 				"%s\t%d\t%s\t%s\t%s\t%s\n",
 				containerData.Name,

@@ -1,6 +1,7 @@
-package misc
+package runtime
 
 import (
+	"ctrz/proc"
 	"encoding/json"
 	"fmt"
 	"os"
@@ -8,14 +9,16 @@ import (
 )
 
 type ContainerMeta struct {
-	PID           int    `json:"pid"`
-	Name          string `json:"name"`
-	StartTime     int64  `json:"startTime,omitempty"`
-	Command       string `json:"command"`
-	Cgroup        string `json:"cgroup"`
-	ContainerIP   string `json:"ContainerIP"`
-	ContainerPort []int  `json:"containerPort,omitempty"`
-	HostPort      []int  `json:"hostPort,omitempty"`
+	PID           int            `json:"pid"`
+	Name          string         `json:"name"`
+	StartTime     uint64         `json:"startTime"`
+	Started       int64          `json:"started"`
+	Command       string         `json:"command"`
+	Cgroup        string         `json:"cgroup"`
+	ContainerIP   string         `json:"ContainerIP"`
+	ContainerPort []int          `json:"containerPort,omitempty"`
+	HostPort      []int          `json:"hostPort,omitempty"`
+	Stats         proc.ProcStats `json:"procStats"`
 }
 
 func GetContainerDataFromName(name string) (ContainerMeta, error) {
