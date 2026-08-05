@@ -3,7 +3,6 @@ package cmd
 import (
 	"fmt"
 	"log"
-	"math"
 	"os"
 	"text/tabwriter"
 	"time"
@@ -55,12 +54,7 @@ var psCmd = &cobra.Command{
 			if _, err := proc.ProcessStats(containerData.PID); err != nil {
 				status = "dangling"
 			}
-			var created string
-			if containerData.StartTime > math.MaxInt64 {
-				created = fmt.Sprintf("%d", containerData.StartTime)
-			} else {
-				created = time.Unix(int64(containerData.StartTime), 0).Format("02/01/2006 15:04:05")
-			}
+			created := time.Unix(containerData.Started, 0).Format("02/01/2006 15:04:05")
 			if _, err := fmt.Fprintf(w,
 				"%s\t%d\t%s\t%s\t%s\t%s\n",
 				containerData.Name,

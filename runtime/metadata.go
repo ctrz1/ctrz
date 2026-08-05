@@ -11,7 +11,8 @@ import (
 type ContainerMeta struct {
 	PID           int            `json:"pid"`
 	Name          string         `json:"name"`
-	StartTime     uint64         `json:"startTime,omitempty"`
+	StartTime     uint64         `json:"startTime"`
+	Started       int64          `json:"started"`
 	Command       string         `json:"command"`
 	Cgroup        string         `json:"cgroup"`
 	ContainerIP   string         `json:"ContainerIP"`

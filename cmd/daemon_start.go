@@ -7,6 +7,7 @@ import (
 	"os/exec"
 	"path/filepath"
 	"strconv"
+	"strings"
 
 	"ctrz/cgroup"
 	"ctrz/proc"
@@ -28,11 +29,16 @@ var startDaemonCmd = &cobra.Command{
 		}
 		data, err := os.ReadFile(path)
 		if err == nil {
-			pid, err := strconv.Atoi(string(data))
+			s := strings.Split(string(data), " ")
+			pid, err := strconv.Atoi(s[0])
 			if err != nil {
 				log.Fatal(err)
 			}
-			if proc.IsProcActive(pid, 0) {
+			starttime, err := strconv.ParseUint(s[1], 10, 64)
+			if err != nil {
+				log.Fatal(err)
+			}
+			if proc.IsProcActive(pid, starttime) {
 				log.Fatalf("Daemon process already running with PID: %d\n", pid)
 			}
 		}
@@ -48,7 +54,12 @@ var startDaemonCmd = &cobra.Command{
 		if err := os.MkdirAll(dir, 0o755); err != nil {
 			log.Fatal(err)
 		}
-		if err := os.WriteFile(path, []byte(strconv.Itoa(d.Process.Pid)), 0o755); err != nil {
+		stat, err := proc.ProcessStats(d.Process.Pid)
+		if err != nil {
+			log.Fatal(err)
+		}
+		daemonInfo := fmt.Sprintf("%d %d", d.Process.Pid, stat.Starttime)
+		if err := os.WriteFile(path, []byte(daemonInfo), 0o755); err != nil {
 			log.Fatal(err)
 		}
 		fmt.Printf("Started daemon process: %d\n", d.Process.Pid)

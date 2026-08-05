@@ -8,6 +8,7 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"time"
 
 	"ctrz/cgroup"
 	"ctrz/proc"
@@ -41,6 +42,7 @@ func AttachNameToPID(pid int, name string, args []string, containerIP string, co
 		Command:       command,
 		Cgroup:        cgroup,
 		StartTime:     p.Starttime,
+		Started:       time.Now().Unix(),
 		ContainerIP:   containerIP,
 		ContainerPort: containerPort,
 		HostPort:      hostPort,

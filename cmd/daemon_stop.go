@@ -6,6 +6,7 @@ import (
 	"os/exec"
 	"path/filepath"
 	"strconv"
+	"strings"
 
 	"ctrz/proc"
 	"ctrz/runtime"
@@ -28,13 +29,17 @@ var daemonStopCmd = &cobra.Command{
 		if err != nil {
 			log.Fatal(err)
 		}
-		pidS := string(data)
-		pid, err := strconv.Atoi(string(data))
+		s := strings.Split(string(data), " ")
+		pid, err := strconv.Atoi(s[0])
 		if err != nil {
 			log.Fatal(err)
 		}
-		if proc.IsProcActive(pid, 0) {
-			out, err := exec.Command("kill", pidS).CombinedOutput()
+		starttime, err := strconv.ParseUint(s[1], 10, 64)
+		if err != nil {
+			log.Fatal(err)
+		}
+		if proc.IsProcActive(pid, starttime) {
+			out, err := exec.Command("kill", strconv.Itoa(pid)).CombinedOutput()
 			if err != nil {
 				log.Fatalf("%v: %s", err, out)
 			}
