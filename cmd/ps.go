@@ -3,6 +3,7 @@ package cmd
 import (
 	"fmt"
 	"log"
+	"math"
 	"os"
 	"text/tabwriter"
 	"time"
@@ -46,12 +47,20 @@ var psCmd = &cobra.Command{
 				continue
 			}
 			var status string
-			if proc.IsProcActive(containerData.PID) {
-				status = "active"
+			if proc.IsProcActive(containerData.PID, containerData.StartTime) {
+				status = "running"
 			} else {
-				status = "inactive"
+				status = "stopped"
 			}
-			created := time.Unix(containerData.StartTime, 0).Format("02/01/2006 15:04:05")
+			if _, err := proc.ProcessStats(containerData.PID); err != nil {
+				status = "dangling"
+			}
+			var created string
+			if containerData.StartTime > math.MaxInt64 {
+				created = fmt.Sprintf("%d", containerData.StartTime)
+			} else {
+				created = time.Unix(int64(containerData.StartTime), 0).Format("02/01/2006 15:04:05")
+			}
 			if _, err := fmt.Fprintf(w,
 				"%s\t%d\t%s\t%s\t%s\t%s\n",
 				containerData.Name,

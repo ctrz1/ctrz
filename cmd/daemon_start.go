@@ -32,7 +32,7 @@ var startDaemonCmd = &cobra.Command{
 			if err != nil {
 				log.Fatal(err)
 			}
-			if proc.IsProcActive(pid) {
+			if proc.IsProcActive(pid, 0) {
 				log.Fatalf("Daemon process already running with PID: %d\n", pid)
 			}
 		}

@@ -33,7 +33,7 @@ var daemonStopCmd = &cobra.Command{
 		if err != nil {
 			log.Fatal(err)
 		}
-		if proc.IsProcActive(pid) {
+		if proc.IsProcActive(pid, 0) {
 			out, err := exec.Command("kill", pidS).CombinedOutput()
 			if err != nil {
 				log.Fatalf("%v: %s", err, out)

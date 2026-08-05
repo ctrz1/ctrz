@@ -45,7 +45,7 @@ var rmCmd = &cobra.Command{
 				if err != nil {
 					continue
 				}
-				if !proc.IsProcActive(containerMeta.PID) || all {
+				if !proc.IsProcActive(containerMeta.PID, containerMeta.StartTime) || all {
 					if err := network.RemoveContainerByName(c, forceKill); err != nil {
 						fmt.Printf("Error removing container: %v\n", err)
 					}

@@ -8,9 +8,9 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
-	"time"
 
 	"ctrz/cgroup"
+	"ctrz/proc"
 )
 
 func AttachNameToPID(pid int, name string, args []string, containerIP string, containerPort, hostPort []int) error {
@@ -31,15 +31,20 @@ func AttachNameToPID(pid int, name string, args []string, containerIP string, co
 	if err != nil {
 		return err
 	}
+	p, err := proc.ProcessStats(pid)
+	if err != nil {
+		return err
+	}
 	meta := ContainerMeta{
 		PID:           pid,
 		Name:          name,
 		Command:       command,
 		Cgroup:        cgroup,
-		StartTime:     time.Now().Unix(),
+		StartTime:     p.Starttime,
 		ContainerIP:   containerIP,
 		ContainerPort: containerPort,
 		HostPort:      hostPort,
+		Stats:         p,
 	}
 	metaJson, err := json.MarshalIndent(meta, "", "  ")
 	fmt.Printf("Container name: %s\n", name)
