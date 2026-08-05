@@ -66,8 +66,11 @@ func CtrzStateDir() (string, error) {
 }
 
 func GetPIDFromName(name string) (int, error) {
-	// TODO
-	return 0, nil
+	containerData, err := GetContainerDataFromName(name)
+	if err != nil {
+		return 0, fmt.Errorf("Error getting PID: %v", err)
+	}
+	return containerData.PID, nil
 }
 
 func CheckContName(name string) bool {
