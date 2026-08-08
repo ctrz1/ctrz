@@ -8,52 +8,9 @@ import (
 	"os/exec"
 	"strconv"
 	"strings"
-	"syscall"
 
-	"ctrz/cgroup"
-	"ctrz/logging"
 	"ctrz/spec"
 )
-
-// TODO: This function should no longer be in the network package. It should also be renamed. It has gone way beyond it's original scope
-func CreateNetNs(command []string, maxCpu, name, ip string, detach bool) (int, *exec.Cmd, error) {
-	args := append([]string{name}, command...)
-	args = append([]string{ip}, args...)
-	args = append([]string{"__ctrz_init"}, args...)
-
-	proc := exec.Command("/proc/self/exe", args...)
-
-	proc.SysProcAttr = &syscall.SysProcAttr{
-		Cloneflags:
-		// syscall.CLONE_NEWUSER | --> can be used for rootless containers later. Ignore for now
-		syscall.CLONE_NEWNET |
-			syscall.CLONE_NEWUTS |
-			syscall.CLONE_NEWPID,
-
-		Unshareflags:               syscall.CLONE_NEWNS,
-		GidMappingsEnableSetgroups: false,
-	}
-
-	err := logging.ProcessLogs(name, proc, detach)
-	if err != nil {
-		return 0, nil, err
-	}
-
-	err = proc.Start()
-	if err != nil {
-		fmt.Printf("Error starting process: %v\n", err)
-		return 0, nil, err
-	}
-
-	pid := proc.Process.Pid
-
-	err = cgroup.CreateAndAttach(pid, maxCpu)
-	if err != nil {
-		return pid, nil, err
-	}
-
-	return pid, proc, nil
-}
 
 func SetupHostNetworking() error {
 	// Enable IPv4 forwarding
@@ -241,7 +198,7 @@ func parsePorts(ports string) (spec.PortMapping, error) {
 	if cp < 1 || hp < 1 || cp > 65535 || hp > 65535 {
 		return spec.PortMapping{}, fmt.Errorf("invalid port mapping: %s", ports)
 	}
-	return spec.PortMapping{hp, cp}, nil
+	return spec.PortMapping{HostPort: hp, ContainerPort: cp}, nil
 }
 
 func DenyAllElse(containerIP string) error {

@@ -4,12 +4,11 @@ package runtime
 
 import (
 	"ctrz/cgroup"
+	"ctrz/logging"
 	"ctrz/network"
 	"ctrz/proc"
 	"ctrz/spec"
 	"fmt"
-	"log"
-	"strings"
 	"syscall"
 	"time"
 )
@@ -26,12 +25,6 @@ func New(name, cpu string, portMappings []string, remove, detach bool, args []st
 		}
 	}
 
-	var command string
-	for _, v := range args {
-		command += fmt.Sprintf("%s ", v)
-	}
-	command = strings.Trim(command, " ")
-
 	spec := spec.ContainerSpec{
 		Name:    name,
 		CPU:     cpu,
@@ -46,30 +39,37 @@ func New(name, cpu string, portMappings []string, remove, detach bool, args []st
 func Run(cont *spec.ContainerSpec) error {
 	containerIP, err := network.AssignContIP()
 	if err != nil {
-		log.Fatal(err)
+		return err
 	}
 	if err := network.SetupHostNetworking(); err != nil {
-		log.Fatal(err)
+		return err
 	}
-	pid, process, err := network.CreateNetNs(cont.Command, cont.CPU, cont.Name, containerIP, cont.Detach)
+	process := proc.Prepare(cont.Name, containerIP, cont.Command)
+	if err := logging.ProcessLogs(cont.Name, process, cont.Detach); err != nil {
+		return err
+	}
+	pid, err := proc.Run(process)
 	if err != nil {
-		log.Fatal(err)
+		return err
+	}
+	if err := cgroup.CreateAndAttach(pid, cont.CPU); err != nil {
+		return err
 	}
 	if err := network.SetupVeth(pid); err != nil {
-		log.Fatal(err)
+		return err
 	}
 	if err := syscall.Kill(pid, syscall.SIGCONT); err != nil {
-		log.Fatal(err)
+		return err
 	}
 	if err := network.DenyAllElse(containerIP); err != nil {
-		log.Fatal(err)
+		return err
 	}
 	var hostPorts []int
 	var containerPorts []int
 	for _, p := range cont.Ports {
 		hostPort, containerPort, err := network.ExposePort(p, containerIP)
 		if err != nil {
-			log.Fatal(err)
+			return err
 		}
 
 		hostPorts = append(hostPorts, hostPort)
@@ -95,27 +95,27 @@ func Run(cont *spec.ContainerSpec) error {
 	cg, err := cgroup.PathForPID(pid)
 
 	container := spec.Container{
-		PID: pid,
-		Spec: *cont,
-		StartTime: p.Starttime,
-		Started: time.Now().Unix(),
-		Cgroup: cg,
+		PID:         pid,
+		Spec:        *cont,
+		StartTime:   p.Starttime,
+		Started:     time.Now().Unix(),
+		Cgroup:      cg,
 		NetworkSpec: networkSpec,
-		ProcStats: p,
+		ProcStats:   p,
 	}
 
 	err = AttachNameToPID(container)
 	if err != nil {
-		log.Fatal(err)
+		return err
 	}
 	if !cont.Detach {
 		if err := process.Wait(); err != nil {
-			log.Fatal(err)
+			return err
 		}
 	}
 	if cont.Remove && !cont.Detach {
 		if err := network.RemoveContainerByName(cont.Name, false, pid, networkSpec); err != nil {
-			log.Fatalf("Error cleaning up container: %v", err)
+			return fmt.Errorf("Error cleaning up container: %v", err)
 		}
 	}
 	return nil
