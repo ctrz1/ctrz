@@ -7,49 +7,27 @@ import (
 	"math/rand"
 	"os"
 	"path/filepath"
-	"time"
 
-	"ctrz/cgroup"
-	"ctrz/proc"
 	"ctrz/spec"
 	"ctrz/utils"
 )
 
-func AttachNameToPID(pid int, name string, args []string, containerIP string, containerPort, hostPort []int) error {
+func AttachNameToPID(container spec.Container) error {
 	path, err := utils.CtrzStateDir()
 	if err != nil {
 		return fmt.Errorf("Error attaching name to PID: %v", err)
 	}
-	err = os.MkdirAll(filepath.Join(path, "containers", name), 0o755)
+	err = os.MkdirAll(filepath.Join(path, "containers", container.Spec.Name), 0o755)
 	if err != nil {
 		return fmt.Errorf("Error attaching name to PID: %v", err)
 	}
-	cgroup, err := cgroup.PathForPID(pid)
-	if err != nil {
-		return err
-	}
-	p, err := proc.ProcessStats(pid)
-	if err != nil {
-		return err
-	}
-	meta := spec.Container{
-		PID:       pid,
-		Spec:      spec.ContainerSpec{},
-		Cgroup:    cgroup,
-		StartTime: p.Starttime,
-		Started:   time.Now().Unix(),
-		NetworkSpec: spec.Network{
-			IP: containerIP,
-		},
-		ProcStats: p,
-	}
-	metaJson, err := json.MarshalIndent(meta, "", "  ")
-	fmt.Printf("Container name: %s\n", name)
+	containerJson, err := json.MarshalIndent(container, "", "  ")
+	fmt.Printf("Container name: %s\n", container.Spec.Name)
 	if err != nil {
 		fmt.Println("Error")
 		return err
 	}
-	err = os.WriteFile(filepath.Join(path, "containers", name, fmt.Sprintf("%s.json", name)), metaJson, 0o644)
+	err = os.WriteFile(filepath.Join(path, "containers", container.Spec.Name, fmt.Sprintf("%s.json", container.Spec.Name)), containerJson, 0o644)
 	if err != nil {
 		return fmt.Errorf("Error attaching name to PID: %v", err)
 	}

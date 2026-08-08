@@ -3,12 +3,15 @@
 package runtime
 
 import (
+	"ctrz/cgroup"
 	"ctrz/network"
+	"ctrz/proc"
 	"ctrz/spec"
 	"fmt"
 	"log"
 	"strings"
 	"syscall"
+	"time"
 )
 
 func New(name, cpu string, portMappings []string, remove, detach bool, args []string) (*spec.ContainerSpec, error) {
@@ -48,7 +51,7 @@ func Run(cont *spec.ContainerSpec) error {
 	if err := network.SetupHostNetworking(); err != nil {
 		log.Fatal(err)
 	}
-	pid, proc, err := network.CreateNetNs(cont.Command, cont.CPU, cont.Name, containerIP, cont.Detach)
+	pid, process, err := network.CreateNetNs(cont.Command, cont.CPU, cont.Name, containerIP, cont.Detach)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -72,15 +75,7 @@ func Run(cont *spec.ContainerSpec) error {
 		hostPorts = append(hostPorts, hostPort)
 		containerPorts = append(containerPorts, containerPort)
 	}
-	err = AttachNameToPID(pid, cont.Name, cont.Command, containerIP, containerPorts, hostPorts)
-	if err != nil {
-		log.Fatal(err)
-	}
-	if !cont.Detach {
-		if err := proc.Wait(); err != nil {
-			log.Fatal(err)
-		}
-	}
+
 	networkSpec := spec.Network{
 		IP: containerIP,
 	}
@@ -90,6 +85,33 @@ func Run(cont *spec.ContainerSpec) error {
 			ContainerPort: containerPort,
 			HostPort:      hostPorts[i],
 		})
+	}
+
+	p, err := proc.ProcessStats(pid)
+	if err != nil {
+		return err
+	}
+
+	cg, err := cgroup.PathForPID(pid)
+
+	container := spec.Container{
+		PID: pid,
+		Spec: *cont,
+		StartTime: p.Starttime,
+		Started: time.Now().Unix(),
+		Cgroup: cg,
+		NetworkSpec: networkSpec,
+		ProcStats: p,
+	}
+
+	err = AttachNameToPID(container)
+	if err != nil {
+		log.Fatal(err)
+	}
+	if !cont.Detach {
+		if err := process.Wait(); err != nil {
+			log.Fatal(err)
+		}
 	}
 	if cont.Remove && !cont.Detach {
 		if err := network.RemoveContainerByName(cont.Name, false, pid, networkSpec); err != nil {
