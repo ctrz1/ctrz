@@ -7,15 +7,16 @@ import (
 	"math/rand"
 	"os"
 	"path/filepath"
-	"strings"
 	"time"
 
 	"ctrz/cgroup"
 	"ctrz/proc"
+	"ctrz/spec"
+	"ctrz/utils"
 )
 
 func AttachNameToPID(pid int, name string, args []string, containerIP string, containerPort, hostPort []int) error {
-	path, err := CtrzStateDir()
+	path, err := utils.CtrzStateDir()
 	if err != nil {
 		return fmt.Errorf("Error attaching name to PID: %v", err)
 	}
@@ -23,11 +24,6 @@ func AttachNameToPID(pid int, name string, args []string, containerIP string, co
 	if err != nil {
 		return fmt.Errorf("Error attaching name to PID: %v", err)
 	}
-	var command string
-	for _, v := range args {
-		command += fmt.Sprintf("%s ", v)
-	}
-	command = strings.Trim(command, " ")
 	cgroup, err := cgroup.PathForPID(pid)
 	if err != nil {
 		return err
@@ -36,17 +32,16 @@ func AttachNameToPID(pid int, name string, args []string, containerIP string, co
 	if err != nil {
 		return err
 	}
-	meta := ContainerMeta{
-		PID:           pid,
-		Name:          name,
-		Command:       command,
-		Cgroup:        cgroup,
-		StartTime:     p.Starttime,
-		Started:       time.Now().Unix(),
-		ContainerIP:   containerIP,
-		ContainerPort: containerPort,
-		HostPort:      hostPort,
-		Stats:         p,
+	meta := spec.Container{
+		PID:       pid,
+		Spec:      spec.ContainerSpec{},
+		Cgroup:    cgroup,
+		StartTime: p.Starttime,
+		Started:   time.Now().Unix(),
+		NetworkSpec: spec.Network{
+			IP: containerIP,
+		},
+		ProcStats: p,
 	}
 	metaJson, err := json.MarshalIndent(meta, "", "  ")
 	fmt.Printf("Container name: %s\n", name)
@@ -61,17 +56,6 @@ func AttachNameToPID(pid int, name string, args []string, containerIP string, co
 	return nil
 }
 
-func CtrzStateDir() (string, error) {
-	if os.Geteuid() == 0 {
-		return filepath.Join("/var", "lib", "ctrz"), nil
-	}
-	home, err := os.UserHomeDir()
-	if err != nil {
-		return "", err
-	}
-	return filepath.Join(home, ".local", "share", "ctrz"), nil
-}
-
 func GetPIDFromName(name string) (int, error) {
 	containerData, err := GetContainerDataFromName(name)
 	if err != nil {
@@ -81,7 +65,7 @@ func GetPIDFromName(name string) (int, error) {
 }
 
 func CheckContName(name string) bool {
-	path, err := CtrzStateDir()
+	path, err := utils.CtrzStateDir()
 	if err != nil {
 		log.Fatalf("Error attaching name to PID: %v", err)
 	}
@@ -97,7 +81,7 @@ func GenerateRandomContName() string {
 }
 
 func RetrieveAllContainers() ([]string, error) {
-	stateDir, err := CtrzStateDir()
+	stateDir, err := utils.CtrzStateDir()
 	if err != nil {
 		return nil, err
 	}

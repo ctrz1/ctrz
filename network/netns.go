@@ -12,6 +12,7 @@ import (
 
 	"ctrz/cgroup"
 	"ctrz/logging"
+	"ctrz/spec"
 )
 
 // TODO: This function should no longer be in the network package. It should also be renamed. It has gone way beyond it's original scope
@@ -224,23 +225,23 @@ func ExposePort(ports, containerIP string) (int, int, error) {
 	return pm.HostPort, pm.ContainerPort, nil
 }
 
-func parsePorts(ports string) (PortMapping, error) {
+func parsePorts(ports string) (spec.PortMapping, error) {
 	parts := strings.Split(ports, ":")
 	if len(parts) != 2 {
-		return PortMapping{}, fmt.Errorf("invalid port mapping: %s", ports)
+		return spec.PortMapping{}, fmt.Errorf("invalid port mapping: %s", ports)
 	}
 	hp, err := strconv.Atoi(parts[0])
 	if err != nil {
-		return PortMapping{}, fmt.Errorf("Invalid host port: %s: %v", parts[0], err)
+		return spec.PortMapping{}, fmt.Errorf("Invalid host port: %s: %v", parts[0], err)
 	}
 	cp, err := strconv.Atoi(parts[1])
 	if err != nil {
-		return PortMapping{}, fmt.Errorf("Invalid container port: %s: %v", parts[1], err)
+		return spec.PortMapping{}, fmt.Errorf("Invalid container port: %s: %v", parts[1], err)
 	}
 	if cp < 1 || hp < 1 || cp > 65535 || hp > 65535 {
-		return PortMapping{}, fmt.Errorf("invalid port mapping: %s", ports)
+		return spec.PortMapping{}, fmt.Errorf("invalid port mapping: %s", ports)
 	}
-	return PortMapping{hp, cp}, nil
+	return spec.PortMapping{hp, cp}, nil
 }
 
 func DenyAllElse(containerIP string) error {

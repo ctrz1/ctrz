@@ -1,7 +1,8 @@
 package network
 
 import (
-	"ctrz/runtime"
+	"ctrz/spec"
+	"ctrz/utils"
 	"fmt"
 	"log"
 	"os"
@@ -41,54 +42,50 @@ const (
 	TO_DESTINATION    = "--to-destination"
 )
 
-func RemoveContainerByName(name string, forceKill bool) error {
-	dir, err := runtime.CtrzStateDir()
+func RemoveContainerByName(name string, forceKill bool, pid int, network spec.Network) error {
+	dir, err := utils.CtrzStateDir()
 	if err != nil {
 		return err
 	}
-	containerData, err := runtime.GetContainerDataFromName(name)
-	if err != nil {
-		return err
-	}
-	_, err = os.Open(fmt.Sprintf("/proc/%d/stat", containerData.PID))
+	_, err = os.Open(fmt.Sprintf("/proc/%d/stat", pid))
 	if err == nil {
-		fmt.Printf("Killing process %d\n", containerData.PID)
+		fmt.Printf("Killing process %d\n", pid)
 		if forceKill {
-			if err := syscall.Kill(containerData.PID, syscall.SIGKILL); err != nil {
+			if err := syscall.Kill(pid, syscall.SIGKILL); err != nil {
 				return fmt.Errorf("Error killing container: %v\n", err)
 			}
 		} else {
-			if err := syscall.Kill(containerData.PID, syscall.SIGTERM); err != nil {
+			if err := syscall.Kill(pid, syscall.SIGTERM); err != nil {
 				return fmt.Errorf("Error killing container: %v\n", err)
 			}
 		}
 	}
-	if err := removeIPTableRules(containerData); err != nil {
+	if err := removeIPTableRules(network); err != nil {
 		log.Fatal(err)
 	}
 	if err := os.RemoveAll(filepath.Join(dir, "containers", name)); err != nil {
 		return err
 	}
-	if err := RemoveContIP(containerData.ContainerIP); err != nil {
+	if err := RemoveContIP(network.IP); err != nil {
 		return err
 	}
 	return nil
 }
 
-func removeIPTableRules(container runtime.ContainerMeta) error {
-	for i := range container.ContainerPort {
+func removeIPTableRules(network spec.Network) error {
+	for i := range network.Ports {
 		cmds := [][]string{
 			{
 				IPTABLES, TABLE, NAT, DELETE, PREROUTING,
-				PROTOCOL, TCP, DESTINATION_PORT, strconv.Itoa(container.HostPort[i]),
+				PROTOCOL, TCP, DESTINATION_PORT, strconv.Itoa(network.Ports[i].HostPort),
 				JUMP, DNAT,
-				TO_DESTINATION, fmt.Sprintf("%s:%d", container.ContainerIP, container.ContainerPort[i]),
+				TO_DESTINATION, fmt.Sprintf("%s:%d", network.IP, network.Ports[i].ContainerPort),
 			},
 			{
 				IPTABLES, TABLE, NAT, DELETE, OUTPUT,
-				PROTOCOL, TCP, DESTINATION_PORT, strconv.Itoa(container.HostPort[i]),
+				PROTOCOL, TCP, DESTINATION_PORT, strconv.Itoa(network.Ports[i].HostPort),
 				JUMP, DNAT,
-				TO_DESTINATION, fmt.Sprintf("%s:%d", container.ContainerIP, container.ContainerPort[i]),
+				TO_DESTINATION, fmt.Sprintf("%s:%d", network.IP, network.Ports[i].ContainerPort),
 			},
 			{
 				IPTABLES, TABLE, NAT, DELETE, POSTROUTING, SOURCE,
@@ -96,14 +93,14 @@ func removeIPTableRules(container runtime.ContainerMeta) error {
 			},
 			{
 				IPTABLES, DELETE, FORWARD,
-				PROTOCOL, TCP, DESTINATION, container.ContainerIP,
-				DESTINATION_PORT, strconv.Itoa(container.ContainerPort[i]),
+				PROTOCOL, TCP, DESTINATION, network.IP,
+				DESTINATION_PORT, strconv.Itoa(network.Ports[i].ContainerPort),
 				JUMP, ACCEPT,
 			},
 			{
 				IPTABLES, DELETE, FORWARD,
-				PROTOCOL, TCP, SOURCE, container.ContainerIP,
-				SOURCE_PORT, strconv.Itoa(container.ContainerPort[i]),
+				PROTOCOL, TCP, SOURCE, network.IP,
+				SOURCE_PORT, strconv.Itoa(network.Ports[i].ContainerPort),
 				JUMP, ACCEPT,
 			},
 			{
@@ -114,12 +111,12 @@ func removeIPTableRules(container runtime.ContainerMeta) error {
 			},
 			{
 				IPTABLES, DELETE, INPUT, PROTOCOL, TCP,
-				DESTINATION_PORT, strconv.Itoa(container.ContainerPort[i]),
+				DESTINATION_PORT, strconv.Itoa(network.Ports[i].ContainerPort),
 				JUMP, ACCEPT,
 			},
 			{
 				IPTABLES, DELETE, FORWARD,
-				DESTINATION, container.ContainerIP,
+				DESTINATION, network.IP,
 				JUMP, DROP,
 			},
 		}

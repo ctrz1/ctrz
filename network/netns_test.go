@@ -3,19 +3,20 @@
 package network
 
 import (
+	"ctrz/spec"
 	"testing"
 )
 
 func TestParsePort(t *testing.T) {
 	tests := []struct {
 		name     string
-		expected PortMapping
+		expected spec.PortMapping
 		input    string
 		wantErr  bool
 	}{
 		{
 			name: "map same ports host -> container",
-			expected: PortMapping{
+			expected: spec.PortMapping{
 				ContainerPort: 8443,
 				HostPort:      8443,
 			},
@@ -24,7 +25,7 @@ func TestParsePort(t *testing.T) {
 		},
 		{
 			name: "map different ports host -> container",
-			expected: PortMapping{
+			expected: spec.PortMapping{
 				ContainerPort: 8080,
 				HostPort:      8443,
 			},
@@ -33,7 +34,7 @@ func TestParsePort(t *testing.T) {
 		},
 		{
 			name: "map invalid container port",
-			expected: PortMapping{
+			expected: spec.PortMapping{
 				ContainerPort: 0,
 				HostPort:      0,
 			},
@@ -42,7 +43,7 @@ func TestParsePort(t *testing.T) {
 		},
 		{
 			name: "map invalid container port",
-			expected: PortMapping{
+			expected: spec.PortMapping{
 				ContainerPort: 0,
 				HostPort:      0,
 			},
@@ -51,7 +52,7 @@ func TestParsePort(t *testing.T) {
 		},
 		{
 			name: "map invalid host port",
-			expected: PortMapping{
+			expected: spec.PortMapping{
 				ContainerPort: 0,
 				HostPort:      0,
 			},
@@ -60,7 +61,7 @@ func TestParsePort(t *testing.T) {
 		},
 		{
 			name: "map invalid host port",
-			expected: PortMapping{
+			expected: spec.PortMapping{
 				ContainerPort: 0,
 				HostPort:      0,
 			},
@@ -69,7 +70,7 @@ func TestParsePort(t *testing.T) {
 		},
 		{
 			name: "too many ports",
-			expected: PortMapping{
+			expected: spec.PortMapping{
 				ContainerPort: 0,
 				HostPort:      0,
 			},
@@ -78,7 +79,7 @@ func TestParsePort(t *testing.T) {
 		},
 		{
 			name: "too few ports",
-			expected: PortMapping{
+			expected: spec.PortMapping{
 				ContainerPort: 0,
 				HostPort:      0,
 			},
@@ -87,7 +88,7 @@ func TestParsePort(t *testing.T) {
 		},
 		{
 			name: "negative port numbers",
-			expected: PortMapping{
+			expected: spec.PortMapping{
 				ContainerPort: 0,
 				HostPort:      0,
 			},
@@ -96,7 +97,7 @@ func TestParsePort(t *testing.T) {
 		},
 		{
 			name: "alphanumerical ports",
-			expected: PortMapping{
+			expected: spec.PortMapping{
 				ContainerPort: 0,
 				HostPort:      0,
 			},
@@ -105,7 +106,7 @@ func TestParsePort(t *testing.T) {
 		},
 		{
 			name: "port number too high",
-			expected: PortMapping{
+			expected: spec.PortMapping{
 				ContainerPort: 0,
 				HostPort:      0,
 			},

@@ -38,8 +38,3 @@ type VethPair struct {
 	ContainerInterface string
 	HostInterface      string
 }
-
-type PortMapping struct {
-	HostPort      int
-	ContainerPort int
-}

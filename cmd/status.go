@@ -18,6 +18,7 @@ import (
 	"ctrz/cgroup"
 	"ctrz/network"
 	"ctrz/runtime"
+	"ctrz/utils"
 
 	"github.com/spf13/cobra"
 )
@@ -37,7 +38,7 @@ var statusCmd = &cobra.Command{
 			log.Fatal(err)
 		}
 		if output != "" {
-			path, err := runtime.CtrzStateDir()
+			path, err := utils.CtrzStateDir()
 			if err != nil {
 				log.Fatal(err)
 			}

@@ -10,6 +10,7 @@ import (
 	"ctrz/network"
 	"ctrz/proc"
 	"ctrz/runtime"
+	"ctrz/spec"
 
 	"github.com/spf13/cobra"
 )
@@ -46,14 +47,15 @@ var rmCmd = &cobra.Command{
 					continue
 				}
 				if !proc.IsProcActive(containerMeta.PID, containerMeta.StartTime) || all {
-					if err := network.RemoveContainerByName(c, forceKill); err != nil {
+					if err := network.RemoveContainerByName(c, forceKill, containerMeta.PID, containerMeta.NetworkSpec); err != nil {
 						fmt.Printf("Error removing container: %v\n", err)
 					}
 				}
 			}
 			return
 		}
-		if err := network.RemoveContainerByName(name, forceKill); err != nil {
+		// TODO: Use smth like runtime.Kill(name, forcekill, inactive, all)
+		if err := network.RemoveContainerByName(name, forceKill, 1000, spec.Network{}); err != nil {
 			log.Fatalf("Error cleaning up container: %v", err)
 		}
 	},

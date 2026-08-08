@@ -57,11 +57,11 @@ var psCmd = &cobra.Command{
 			created := time.Unix(containerData.Started, 0).Format("02/01/2006 15:04:05")
 			if _, err := fmt.Fprintf(w,
 				"%s\t%d\t%s\t%s\t%s\t%s\n",
-				containerData.Name,
+				containerData.Spec.Name,
 				containerData.PID,
-				containerData.ContainerIP,
+				containerData.NetworkSpec.IP,
 				created,
-				containerData.Command,
+				containerData.Spec.Command,
 				status,
 			); err != nil {
 				log.Fatal(err)
