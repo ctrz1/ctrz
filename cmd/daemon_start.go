@@ -48,7 +48,8 @@ var startDaemonCmd = &cobra.Command{
 		if err := d.Start(); err != nil {
 			log.Fatal(err)
 		}
-		if err := cgroup.CreateAndAttach(d.Process.Pid, "100000 100000"); err != nil {
+		cgroupManager := cgroup.New()
+		if err := cgroupManager.CreateAndAttach(d.Process.Pid, "100000 100000"); err != nil {
 			log.Fatal(err)
 		}
 		if err := os.MkdirAll(dir, 0o755); err != nil {

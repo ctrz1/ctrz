@@ -9,29 +9,24 @@ import (
 	"ctrz/proc"
 	"ctrz/spec"
 	"fmt"
-	"syscall"
 	"time"
 )
 
 type Runtime struct {
 	NetworkManager network.Manager
+	CgroupManager  cgroup.Manager
 }
 
 func New() Runtime {
 	return Runtime{
-		NetworkManager: network.Manager{
-			Subnet: "10.200.1.0/24",
-			Bridge: "ctrz-br0",
-		},
+		NetworkManager: network.New(),
+		CgroupManager: cgroup.New(),
 	}
 }
 
 func (r Runtime) Run(cont *spec.ContainerSpec) error {
-	containerIP, err := network.AssignContIP()
+	containerIP, err := r.NetworkManager.Initialise()
 	if err != nil {
-		return err
-	}
-	if err := network.SetupHostNetworking(); err != nil {
 		return err
 	}
 	process := proc.Prepare(cont.Name, containerIP, cont.Command)
@@ -42,39 +37,12 @@ func (r Runtime) Run(cont *spec.ContainerSpec) error {
 	if err != nil {
 		return err
 	}
-	if err := cgroup.CreateAndAttach(pid, cont.CPU); err != nil {
+	if err := r.CgroupManager.CreateAndAttach(pid, cont.CPU); err != nil {
 		return err
 	}
-	if err := network.SetupVeth(pid); err != nil {
+	networkSpec, err := r.NetworkManager.SetUp(pid, containerIP, cont.Ports)
+	if err != nil {
 		return err
-	}
-	if err := syscall.Kill(pid, syscall.SIGCONT); err != nil {
-		return err
-	}
-	if err := network.DenyAllElse(containerIP); err != nil {
-		return err
-	}
-	var hostPorts []int
-	var containerPorts []int
-	for _, p := range cont.Ports {
-		hostPort, containerPort, err := network.ExposePort(p, containerIP)
-		if err != nil {
-			return err
-		}
-
-		hostPorts = append(hostPorts, hostPort)
-		containerPorts = append(containerPorts, containerPort)
-	}
-
-	networkSpec := spec.Network{
-		IP: containerIP,
-	}
-
-	for i, containerPort := range containerPorts {
-		networkSpec.Ports = append(networkSpec.Ports, spec.PortMapping{
-			ContainerPort: containerPort,
-			HostPort:      hostPorts[i],
-		})
 	}
 
 	p, err := proc.ProcessStats(pid)

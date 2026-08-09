@@ -6,8 +6,8 @@ import (
 	"strings"
 )
 
-func EnabledControllers(cgroupPath string) (map[string]bool, error) {
-	data, err := os.ReadFile(filepath.Join(cgroupPath, "/cgroup.controllers"))
+func (m Manager) EnabledControllers() (map[string]bool, error) {
+	data, err := os.ReadFile(filepath.Join("sys", "fs", "cgroup", "cgroup.controllers"))
 	if err != nil {
 		return nil, err
 	}

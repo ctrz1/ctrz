@@ -8,6 +8,16 @@ import (
 
 const CtrzRoot = "/sys/fs/cgroup/ctrz"
 
+type Manager struct {
+	Root string
+}
+
+func New() Manager {
+	return Manager{
+		Root: CtrzRoot,
+	}
+}
+
 func EnsureCtrzRoot() error {
 	if _, err := os.Stat(CtrzRoot); os.IsNotExist(err) {
 		if err := os.Mkdir(CtrzRoot, 0o755); err != nil {

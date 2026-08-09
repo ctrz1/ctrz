@@ -88,7 +88,7 @@ var statusCmd = &cobra.Command{
 		if err != nil {
 			log.Fatal(err)
 		}
-		ctrls, err := cgroup.EnabledControllers(path)
+		ctrls, err := cgroup.New().EnabledControllers()
 		if err != nil {
 			log.Fatal(err)
 		}
