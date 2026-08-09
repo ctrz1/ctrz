@@ -8,6 +8,7 @@ import (
 	"log"
 
 	"ctrz/runtime"
+	"ctrz/spec"
 
 	"github.com/spf13/cobra"
 )
@@ -20,11 +21,23 @@ var runCmd = &cobra.Command{
 			log.Fatal("At least one command must be provided")
 		}
 		name, cpu, pm, remove, detach := getFlags(cmd)
-		spec, err := runtime.New(name, cpu, pm, remove, detach, args)
+		name, err := runtime.Name(name)
 		if err != nil {
 			log.Fatal(err)
 		}
-		if err := runtime.Run(spec); err != nil {
+		container := spec.ContainerSpec{
+			Name:    name,
+			CPU:     cpu,
+			Command: args,
+			Remove:  remove,
+			Detach:  detach,
+			Ports:   pm,
+		}
+		r := runtime.New()
+		if err != nil {
+			log.Fatal(err)
+		}
+		if err := r.Run(&container); err != nil {
 			log.Fatal(err)
 		}
 	},

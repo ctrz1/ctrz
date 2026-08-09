@@ -13,30 +13,20 @@ import (
 	"time"
 )
 
-func New(name, cpu string, portMappings []string, remove, detach bool, args []string) (*spec.ContainerSpec, error) {
-	if name == "" {
-		name = GenerateRandomContName()
-		for !CheckContName(name) {
-			name = GenerateRandomContName()
-		}
-	} else {
-		if !CheckContName(name) {
-			return nil, fmt.Errorf("Container '%s' already exists. Either choose a different name or remove the existing container", name)
-		}
-	}
-
-	spec := spec.ContainerSpec{
-		Name:    name,
-		CPU:     cpu,
-		Command: args,
-		Remove:  remove,
-		Detach:  detach,
-		Ports:   portMappings,
-	}
-	return &spec, nil
+type Runtime struct {
+	NetworkManager network.Manager
 }
 
-func Run(cont *spec.ContainerSpec) error {
+func New() Runtime {
+	return Runtime{
+		NetworkManager: network.Manager{
+			Subnet: "10.200.1.0/24",
+			Bridge: "ctrz-br0",
+		},
+	}
+}
+
+func (r Runtime) Run(cont *spec.ContainerSpec) error {
 	containerIP, err := network.AssignContIP()
 	if err != nil {
 		return err

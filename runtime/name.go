@@ -12,6 +12,20 @@ import (
 	"ctrz/utils"
 )
 
+func Name(name string) (string, error) {
+	if name == "" {
+		name = GenerateRandomContName()
+		for !CheckContName(name) {
+			name = GenerateRandomContName()
+		}
+	} else {
+		if !CheckContName(name) {
+			return "", fmt.Errorf("Container '%s' already exists. Either choose a different name or remove the existing container", name)
+		}
+	}
+	return name, nil
+}
+
 func AttachNameToPID(container spec.Container) error {
 	path, err := utils.CtrzStateDir()
 	if err != nil {
