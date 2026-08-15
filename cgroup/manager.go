@@ -6,7 +6,17 @@ import (
 	"strings"
 )
 
-const CtrzRoot = "/sys/fs/cgroup/ctrz"
+const CtrzRoot = "/sys/fs/cgroup"
+
+type Manager struct {
+	Root string
+}
+
+func New() Manager {
+	return Manager{
+		Root: CtrzRoot,
+	}
+}
 
 func EnsureCtrzRoot() error {
 	if _, err := os.Stat(CtrzRoot); os.IsNotExist(err) {

@@ -56,11 +56,12 @@ func ctrzDeamon() {
 				continue
 			}
 
-			path, err := cgroup.PathForPID(containerData.PID)
+			cg := cgroup.New()
+			path, err := cg.Path(containerData.PID)
 			if err != nil {
 				log.Fatal(err)
 			}
-			ctrls, err := cgroup.EnabledControllers(path)
+			ctrls, err := cgroup.New().EnabledControllers()
 			if err != nil {
 				log.Fatal(err)
 			}

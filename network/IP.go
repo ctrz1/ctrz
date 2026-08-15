@@ -1,7 +1,7 @@
 package network
 
 import (
-	"ctrz/runtime"
+	"ctrz/utils"
 	"errors"
 	"fmt"
 	"math/rand"
@@ -12,7 +12,7 @@ import (
 )
 
 func AssignContIP() (ip string, err error) {
-	dir, err := runtime.CtrzStateDir()
+	dir, err := utils.CtrzStateDir()
 	if err != nil {
 		return "", fmt.Errorf("Error retrieving ctrz state directory: %v\n", err)
 	}
@@ -84,7 +84,7 @@ func writeIPToFile(IP, dir string) (err error) {
 }
 
 func RemoveContIP(containerIP string) (err error) {
-	dir, err := runtime.CtrzStateDir()
+	dir, err := utils.CtrzStateDir()
 	if err != nil {
 		return fmt.Errorf("Error retrieving ctrz state directory: %v\n", err)
 	}

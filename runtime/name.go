@@ -7,69 +7,45 @@ import (
 	"math/rand"
 	"os"
 	"path/filepath"
-	"strings"
-	"time"
 
-	"ctrz/cgroup"
-	"ctrz/proc"
+	"ctrz/spec"
+	"ctrz/utils"
 )
 
-func AttachNameToPID(pid int, name string, args []string, containerIP string, containerPort, hostPort []int) error {
-	path, err := CtrzStateDir()
+func Name(name string) (string, error) {
+	if name == "" {
+		name = GenerateRandomContName()
+		for !CheckContName(name) {
+			name = GenerateRandomContName()
+		}
+	} else {
+		if !CheckContName(name) {
+			return "", fmt.Errorf("Container '%s' already exists. Either choose a different name or remove the existing container", name)
+		}
+	}
+	return name, nil
+}
+
+func AttachNameToPID(container spec.Container) error {
+	path, err := utils.CtrzStateDir()
 	if err != nil {
 		return fmt.Errorf("Error attaching name to PID: %v", err)
 	}
-	err = os.MkdirAll(filepath.Join(path, "containers", name), 0o755)
+	err = os.MkdirAll(filepath.Join(path, "containers", container.Spec.Name), 0o755)
 	if err != nil {
 		return fmt.Errorf("Error attaching name to PID: %v", err)
 	}
-	var command string
-	for _, v := range args {
-		command += fmt.Sprintf("%s ", v)
-	}
-	command = strings.Trim(command, " ")
-	cgroup, err := cgroup.PathForPID(pid)
-	if err != nil {
-		return err
-	}
-	p, err := proc.ProcessStats(pid)
-	if err != nil {
-		return err
-	}
-	meta := ContainerMeta{
-		PID:           pid,
-		Name:          name,
-		Command:       command,
-		Cgroup:        cgroup,
-		StartTime:     p.Starttime,
-		Started:       time.Now().Unix(),
-		ContainerIP:   containerIP,
-		ContainerPort: containerPort,
-		HostPort:      hostPort,
-		Stats:         p,
-	}
-	metaJson, err := json.MarshalIndent(meta, "", "  ")
-	fmt.Printf("Container name: %s\n", name)
+	containerJson, err := json.MarshalIndent(container, "", "  ")
+	fmt.Printf("Container name: %s\n", container.Spec.Name)
 	if err != nil {
 		fmt.Println("Error")
 		return err
 	}
-	err = os.WriteFile(filepath.Join(path, "containers", name, fmt.Sprintf("%s.json", name)), metaJson, 0o644)
+	err = os.WriteFile(filepath.Join(path, "containers", container.Spec.Name, fmt.Sprintf("%s.json", container.Spec.Name)), containerJson, 0o644)
 	if err != nil {
 		return fmt.Errorf("Error attaching name to PID: %v", err)
 	}
 	return nil
-}
-
-func CtrzStateDir() (string, error) {
-	if os.Geteuid() == 0 {
-		return filepath.Join("/var", "lib", "ctrz"), nil
-	}
-	home, err := os.UserHomeDir()
-	if err != nil {
-		return "", err
-	}
-	return filepath.Join(home, ".local", "share", "ctrz"), nil
 }
 
 func GetPIDFromName(name string) (int, error) {
@@ -81,7 +57,7 @@ func GetPIDFromName(name string) (int, error) {
 }
 
 func CheckContName(name string) bool {
-	path, err := CtrzStateDir()
+	path, err := utils.CtrzStateDir()
 	if err != nil {
 		log.Fatalf("Error attaching name to PID: %v", err)
 	}
@@ -97,7 +73,7 @@ func GenerateRandomContName() string {
 }
 
 func RetrieveAllContainers() ([]string, error) {
-	stateDir, err := CtrzStateDir()
+	stateDir, err := utils.CtrzStateDir()
 	if err != nil {
 		return nil, err
 	}

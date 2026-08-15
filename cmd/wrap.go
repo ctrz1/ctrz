@@ -52,7 +52,7 @@ var wrapCmd = &cobra.Command{
 			quota := cpu * 1000
 			maxCpu = fmt.Sprintf("%d 100000", quota)
 		}
-		if err := cgroup.CreateAndAttach(pid, maxCpu); err != nil {
+		if err := cgroup.New().CreateAndAttach(pid, maxCpu); err != nil {
 			log.Fatal(err)
 		}
 	},

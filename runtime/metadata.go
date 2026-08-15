@@ -1,28 +1,16 @@
 package runtime
 
 import (
-	"ctrz/proc"
+	"ctrz/spec"
+	"ctrz/utils"
 	"encoding/json"
 	"fmt"
 	"os"
 	"path/filepath"
 )
 
-type ContainerMeta struct {
-	PID           int            `json:"pid"`
-	Name          string         `json:"name"`
-	StartTime     uint64         `json:"startTime"`
-	Started       int64          `json:"started"`
-	Command       string         `json:"command"`
-	Cgroup        string         `json:"cgroup"`
-	ContainerIP   string         `json:"ContainerIP"`
-	ContainerPort []int          `json:"containerPort,omitempty"`
-	HostPort      []int          `json:"hostPort,omitempty"`
-	Stats         proc.ProcStats `json:"procStats"`
-}
-
-func GetContainerDataFromName(name string) (ContainerMeta, error) {
-	var containerData ContainerMeta
+func GetContainerDataFromName(name string) (spec.Container, error) {
+	var containerData spec.Container
 	data, err := GetRawContainerDataFromName(name)
 	if err != nil {
 		return containerData, err
@@ -35,7 +23,7 @@ func GetContainerDataFromName(name string) (ContainerMeta, error) {
 
 func GetRawContainerDataFromName(name string) ([]byte, error) {
 	var containerData []byte
-	dir, err := CtrzStateDir()
+	dir, err := utils.CtrzStateDir()
 	if err != nil {
 		return containerData, err
 	}

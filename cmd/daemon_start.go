@@ -11,7 +11,7 @@ import (
 
 	"ctrz/cgroup"
 	"ctrz/proc"
-	"ctrz/runtime"
+	"ctrz/utils"
 
 	"github.com/spf13/cobra"
 )
@@ -21,7 +21,7 @@ var startDaemonCmd = &cobra.Command{
 	Short: "Start ctrz daemon process",
 	Args:  cobra.ExactArgs(0),
 	Run: func(cmd *cobra.Command, args []string) {
-		dir, err := runtime.CtrzStateDir()
+		dir, err := utils.CtrzStateDir()
 		path := filepath.Join(dir, "daemon")
 
 		if err != nil {
@@ -48,7 +48,8 @@ var startDaemonCmd = &cobra.Command{
 		if err := d.Start(); err != nil {
 			log.Fatal(err)
 		}
-		if err := cgroup.CreateAndAttach(d.Process.Pid, "100000 100000"); err != nil {
+		cgroupManager := cgroup.New()
+		if err := cgroupManager.CreateAndAttach(d.Process.Pid, "100000 100000"); err != nil {
 			log.Fatal(err)
 		}
 		if err := os.MkdirAll(dir, 0o755); err != nil {

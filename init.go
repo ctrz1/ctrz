@@ -98,7 +98,9 @@ func ctrzInit() {
 		log.Fatalf("Error mounting pseudo filesystem: %v\n", err)
 	}
 
-	if err := network.SetupNetns(containerIP); err != nil {
+	manager := network.New()
+
+	if err := manager.SetupNetns(containerIP); err != nil {
 		log.Fatal("run failed: ", err)
 	}
 

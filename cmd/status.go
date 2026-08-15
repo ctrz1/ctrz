@@ -18,6 +18,7 @@ import (
 	"ctrz/cgroup"
 	"ctrz/network"
 	"ctrz/runtime"
+	"ctrz/utils"
 
 	"github.com/spf13/cobra"
 )
@@ -37,7 +38,7 @@ var statusCmd = &cobra.Command{
 			log.Fatal(err)
 		}
 		if output != "" {
-			path, err := runtime.CtrzStateDir()
+			path, err := utils.CtrzStateDir()
 			if err != nil {
 				log.Fatal(err)
 			}
@@ -83,11 +84,12 @@ var statusCmd = &cobra.Command{
 		if err != nil {
 			log.Fatal(err)
 		}
-		path, err := cgroup.PathForPID(containerData.PID)
+		cg := cgroup.New()
+		path, err := cg.Path(containerData.PID)
 		if err != nil {
 			log.Fatal(err)
 		}
-		ctrls, err := cgroup.EnabledControllers(path)
+		ctrls, err := cgroup.New().EnabledControllers()
 		if err != nil {
 			log.Fatal(err)
 		}

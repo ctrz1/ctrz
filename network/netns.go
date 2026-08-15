@@ -8,53 +8,17 @@ import (
 	"os/exec"
 	"strconv"
 	"strings"
-	"syscall"
 
-	"ctrz/cgroup"
-	"ctrz/logging"
+	"ctrz/spec"
 )
 
-// TODO: This function should no longer be in the network package. It should also be renamed. It has gone way beyond it's original scope
-func CreateNetNs(command []string, maxCpu, name, ip string, detach bool) (int, *exec.Cmd, error) {
-	args := append([]string{name}, command...)
-	args = append([]string{ip}, args...)
-	args = append([]string{"__ctrz_init"}, args...)
+/**
+*	Here bridges, subnets, and container veths should not be hardcoded, but taken from the manager
+*	It is acceptable for now though and should be addressed once these exec.Command(...) calls are
+* 	replaced with netlink
+**/
 
-	proc := exec.Command("/proc/self/exe", args...)
-
-	proc.SysProcAttr = &syscall.SysProcAttr{
-		Cloneflags:
-		// syscall.CLONE_NEWUSER | --> can be used for rootless containers later. Ignore for now
-		syscall.CLONE_NEWNET |
-			syscall.CLONE_NEWUTS |
-			syscall.CLONE_NEWPID,
-
-		Unshareflags:               syscall.CLONE_NEWNS,
-		GidMappingsEnableSetgroups: false,
-	}
-
-	err := logging.ProcessLogs(name, proc, detach)
-	if err != nil {
-		return 0, nil, err
-	}
-
-	err = proc.Start()
-	if err != nil {
-		fmt.Printf("Error starting process: %v\n", err)
-		return 0, nil, err
-	}
-
-	pid := proc.Process.Pid
-
-	err = cgroup.CreateAndAttach(pid, maxCpu)
-	if err != nil {
-		return pid, nil, err
-	}
-
-	return pid, proc, nil
-}
-
-func SetupHostNetworking() error {
+func (m Manager) SetupHostNetworking() error {
 	// Enable IPv4 forwarding
 	if out, err := exec.Command(
 		"sysctl",
@@ -161,7 +125,7 @@ func SetupHostNetworking() error {
 	return nil
 }
 
-func SetupNetns(containerIP string) error {
+func (m Manager) SetupNetns(containerIP string) error {
 	if out, err := exec.Command("ip", "link", "set", "lo", "up").CombinedOutput(); err != nil {
 		return fmt.Errorf("loopback up failed: %v: %s", err, out)
 	}
@@ -224,23 +188,23 @@ func ExposePort(ports, containerIP string) (int, int, error) {
 	return pm.HostPort, pm.ContainerPort, nil
 }
 
-func parsePorts(ports string) (PortMapping, error) {
+func parsePorts(ports string) (spec.PortMapping, error) {
 	parts := strings.Split(ports, ":")
 	if len(parts) != 2 {
-		return PortMapping{}, fmt.Errorf("invalid port mapping: %s", ports)
+		return spec.PortMapping{}, fmt.Errorf("invalid port mapping: %s", ports)
 	}
 	hp, err := strconv.Atoi(parts[0])
 	if err != nil {
-		return PortMapping{}, fmt.Errorf("Invalid host port: %s: %v", parts[0], err)
+		return spec.PortMapping{}, fmt.Errorf("Invalid host port: %s: %v", parts[0], err)
 	}
 	cp, err := strconv.Atoi(parts[1])
 	if err != nil {
-		return PortMapping{}, fmt.Errorf("Invalid container port: %s: %v", parts[1], err)
+		return spec.PortMapping{}, fmt.Errorf("Invalid container port: %s: %v", parts[1], err)
 	}
 	if cp < 1 || hp < 1 || cp > 65535 || hp > 65535 {
-		return PortMapping{}, fmt.Errorf("invalid port mapping: %s", ports)
+		return spec.PortMapping{}, fmt.Errorf("invalid port mapping: %s", ports)
 	}
-	return PortMapping{hp, cp}, nil
+	return spec.PortMapping{HostPort: hp, ContainerPort: cp}, nil
 }
 
 func DenyAllElse(containerIP string) error {
