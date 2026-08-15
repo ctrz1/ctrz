@@ -26,10 +26,10 @@ func (m Manager) Initialise() (string, error) {
 }
 
 func (m Manager) SetUp(pid int, ip string, ports []string) (spec.Network, error) {
-	if err := SetupHostNetworking(); err != nil {
+	if err := m.SetupHostNetworking(); err != nil {
 		return spec.Network{}, err
 	}
-	if err := SetupVeth(pid); err != nil {
+	if err := m.SetupVeth(pid); err != nil {
 		return spec.Network{}, nil
 	}
 	if err := syscall.Kill(pid, syscall.SIGCONT); err != nil {

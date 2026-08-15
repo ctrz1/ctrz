@@ -4,7 +4,10 @@ import (
 	"testing"
 )
 
-func TestPathForPID(t *testing.T) {
+func TestPath(t *testing.T) {
+
+	cg := New()
+
 	tests := []struct {
 		name     string
 		pid      int
@@ -17,7 +20,7 @@ func TestPathForPID(t *testing.T) {
 			expected: "/sys/fs/cgroup/ctrz-247",
 		},
 		{
-			name:     "basic PID",
+			name:     "invalid PID",
 			pid:      -3,
 			expected: "",
 			wantErr:  true,
@@ -26,7 +29,7 @@ func TestPathForPID(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, err := PathForPID(tt.pid)
+			got, err := cg.Path(tt.pid)
 			if err != nil && tt.wantErr == false {
 				t.Fatalf("unexpected error: %v", err)
 			}

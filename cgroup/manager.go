@@ -6,7 +6,7 @@ import (
 	"strings"
 )
 
-const CtrzRoot = "/sys/fs/cgroup/ctrz"
+const CtrzRoot = "/sys/fs/cgroup"
 
 type Manager struct {
 	Root string

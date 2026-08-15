@@ -20,7 +20,7 @@ type Runtime struct {
 func New() Runtime {
 	return Runtime{
 		NetworkManager: network.New(),
-		CgroupManager: cgroup.New(),
+		CgroupManager:  cgroup.New(),
 	}
 }
 
@@ -50,14 +50,17 @@ func (r Runtime) Run(cont *spec.ContainerSpec) error {
 		return err
 	}
 
-	cg, err := cgroup.PathForPID(pid)
+	cgPath, err := r.CgroupManager.Path(pid)
+	if err != nil {
+		return err
+	}
 
 	container := spec.Container{
 		PID:         pid,
 		Spec:        *cont,
 		StartTime:   p.Starttime,
 		Started:     time.Now().Unix(),
-		Cgroup:      cg,
+		Cgroup:      cgPath,
 		NetworkSpec: networkSpec,
 		ProcStats:   p,
 	}

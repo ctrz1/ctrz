@@ -1,3 +1,5 @@
+//go:build linux
+
 package network
 
 import (
@@ -6,7 +8,7 @@ import (
 	"strconv"
 )
 
-func SetupVeth(pid int) error {
+func (m Manager) SetupVeth(pid int) error {
 	hostIf := "veth-host-" + strconv.Itoa(pid)
 	ctrzIf := "ctrz0"
 

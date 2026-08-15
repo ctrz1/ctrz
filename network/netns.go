@@ -12,7 +12,13 @@ import (
 	"ctrz/spec"
 )
 
-func SetupHostNetworking() error {
+/**
+*	Here bridges, subnets, and container veths should not be hardcoded, but taken from the manager
+*	It is acceptable for now though and should be addressed once these exec.Command(...) calls are
+* 	replaced with netlink
+**/
+
+func (m Manager) SetupHostNetworking() error {
 	// Enable IPv4 forwarding
 	if out, err := exec.Command(
 		"sysctl",
@@ -119,7 +125,7 @@ func SetupHostNetworking() error {
 	return nil
 }
 
-func SetupNetns(containerIP string) error {
+func (m Manager) SetupNetns(containerIP string) error {
 	if out, err := exec.Command("ip", "link", "set", "lo", "up").CombinedOutput(); err != nil {
 		return fmt.Errorf("loopback up failed: %v: %s", err, out)
 	}

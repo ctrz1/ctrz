@@ -56,7 +56,8 @@ func ctrzDeamon() {
 				continue
 			}
 
-			path, err := cgroup.PathForPID(containerData.PID)
+			cg := cgroup.New()
+			path, err := cg.Path(containerData.PID)
 			if err != nil {
 				log.Fatal(err)
 			}
