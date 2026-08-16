@@ -8,7 +8,10 @@ import (
 	"ctrz/network"
 	"ctrz/proc"
 	"ctrz/spec"
+	"ctrz/utils"
 	"fmt"
+	"os"
+	"path/filepath"
 	"time"
 )
 
@@ -75,8 +78,51 @@ func (r Runtime) Run(cont *spec.ContainerSpec) error {
 		}
 	}
 	if cont.Remove && !cont.Detach {
-		if err := network.RemoveContainerByName(cont.Name, false, pid, networkSpec); err != nil {
-			return fmt.Errorf("Error cleaning up container: %v", err)
+		r.Remove(&spec.Removal{
+			Name: cont.Name,
+			Force: false,
+			All: false,
+			Inactive: false,
+		})
+	}
+	return nil
+}
+
+func (r Runtime) Container(name string) (*spec.Container, error) {
+	cont, err := GetContainerDataFromName(name)
+	return &cont, err
+}
+
+func (r Runtime) Remove(rm *spec.Removal) error {
+	dir, err := utils.CtrzStateDir()
+	if err != nil {
+		return err
+	}
+
+	var containers []string
+	
+	if rm.Inactive || rm.All {
+		containers, err = RetrieveAllContainers()
+		if err != nil {
+			return fmt.Errorf("Could not retrieve list of containers: %v\n", err)
+		}
+	} else {
+		containers = append(containers, rm.Name)
+	}
+
+	for _, c := range containers {
+		cont, err := GetContainerDataFromName(c)
+		if err != nil {
+			return fmt.Errorf("Error removing container: %v\n", err)
+		}
+		if err := proc.Kill(rm, cont.PID, cont.StartTime); err != nil {
+			return fmt.Errorf("Error cleaning up process: %v\n", err)
+		}
+		if err := r.NetworkManager.Cleanup(cont.NetworkSpec); err != nil {
+			return fmt.Errorf("Error cleaning up container networking: %v\n", err)
+		}
+		if err := os.RemoveAll(filepath.Join(dir, "containers", c)); err != nil {
+			return fmt.Errorf("Error deleting container data: %v\n", err)
 		}
 	}
 	return nil

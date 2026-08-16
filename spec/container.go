@@ -20,3 +20,10 @@ type ContainerSpec struct {
 	Detach  bool     `json:"detached"`
 	Ports   []string
 }
+
+type Removal struct {
+	Name     string
+	Force    bool
+	All      bool
+	Inactive bool
+}

@@ -48,9 +48,14 @@ func AssignContIP() (ip string, err error) {
 func assignedIPs(dir string) ([]string, error) {
 	b, err := os.ReadFile(filepath.Join(dir, "containers", "IP"))
 	if err != nil {
-		return []string{}, fmt.Errorf("Error reading IP file: %v\n", err)
+		return nil, fmt.Errorf("Error reading IP file: %v\n", err)
 	}
-	data := string(b)
+
+	data := strings.TrimSpace(string(b))
+	if data == "" {
+		return []string{}, nil
+	}
+
 	return strings.Split(data, "\n"), nil
 }
 

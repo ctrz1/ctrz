@@ -4,6 +4,7 @@ package network
 
 import (
 	"ctrz/spec"
+	"log"
 	"syscall"
 )
 
@@ -68,6 +69,12 @@ func (m Manager) Configure() {
 
 }
 
-func (m Manager) Cleanup() {
-
+func (m Manager) Cleanup(network spec.Network) error {
+	if err := removeIPTableRules(network); err != nil {
+		log.Fatal(err)
+	}
+	if err := RemoveContIP(network.IP); err != nil {
+		return err
+	}
+	return nil
 }
