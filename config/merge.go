@@ -55,7 +55,6 @@ func merge(cli *CLIOptions, conf *spec.ContainerSpec) spec.ContainerSpec {
 	if cli != nil && cli.Detach != nil {
 		ret.Detach = *cli.Detach
 	} else if conf != nil {
-		fmt.Printf("Use conf detach %t\n", conf.Detach)
 		ret.Detach = conf.Detach
 	}
 
@@ -66,6 +65,5 @@ func merge(cli *CLIOptions, conf *spec.ContainerSpec) spec.ContainerSpec {
 		ret.Ports = conf.Ports
 	}
 
-	fmt.Printf("%+v\n", ret)
 	return ret
 }

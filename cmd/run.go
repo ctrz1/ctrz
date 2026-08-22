@@ -19,10 +19,6 @@ var runCmd = &cobra.Command{
 	Run: func(cmd *cobra.Command, args []string) {
 		conf, confPath := getFlags(cmd)
 		conf.Command = &args
-		//name, err := runtime.Name(name)
-		//if err != nil {
-		//	log.Fatal(err)
-		//}
 		container, err := config.Get(&conf, confPath)
 		if err != nil {
 			log.Fatal(err)
