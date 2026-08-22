@@ -2,9 +2,7 @@
 
 package main
 
-import (
-	"log"
-)
+import "log"
 
 func main() {
 	log.Fatal("ctrz is currently only available for linux")

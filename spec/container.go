@@ -18,7 +18,7 @@ type ContainerSpec struct {
 	Command []string `json:"command"`
 	Remove  bool     `json:"remove"`
 	Detach  bool     `json:"detached"`
-	Ports   []string
+	Ports   []string `json:"ports"`
 }
 
 type Removal struct {

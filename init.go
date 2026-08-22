@@ -11,6 +11,7 @@ import (
 
 	"ctrz/fs"
 	"ctrz/network"
+
 	"golang.org/x/sys/unix"
 )
 
@@ -98,7 +99,7 @@ func ctrzInit() {
 		log.Fatalf("Error mounting pseudo filesystem: %v\n", err)
 	}
 
-	manager := network.New()
+	manager := network.New("10.200.1.0/24", "ctrz-br0", "ctrz0")
 
 	if err := manager.SetupNetns(containerIP); err != nil {
 		log.Fatal("run failed: ", err)

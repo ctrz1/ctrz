@@ -22,7 +22,7 @@ type Runtime struct {
 
 func New() Runtime {
 	return Runtime{
-		NetworkManager: network.New(),
+		NetworkManager: network.New("10.200.1.0/24", "ctrz-br0", "ctrz0"),
 		CgroupManager:  cgroup.New(),
 	}
 }
@@ -79,9 +79,9 @@ func (r Runtime) Run(cont *spec.ContainerSpec) error {
 	}
 	if cont.Remove && !cont.Detach {
 		r.Remove(&spec.Removal{
-			Name: cont.Name,
-			Force: false,
-			All: false,
+			Name:     cont.Name,
+			Force:    false,
+			All:      false,
 			Inactive: false,
 		})
 	}
@@ -100,7 +100,7 @@ func (r Runtime) Remove(rm *spec.Removal) error {
 	}
 
 	var containers []string
-	
+
 	if rm.Inactive || rm.All {
 		containers, err = RetrieveAllContainers()
 		if err != nil {

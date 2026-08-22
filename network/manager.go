@@ -14,11 +14,11 @@ type Manager struct {
 	ContainerInterface string
 }
 
-func New() Manager {
+func New(subnet, bridge, containerInterface string) Manager {
 	return Manager{
-		Subnet:             "10.200.1.0/24",
-		Bridge:             "ctrz-br0",
-		ContainerInterface: "ctrz0",
+		Subnet:             subnet,             //"10.200.1.0/24",
+		Bridge:             bridge,             //"ctrz-br0",
+		ContainerInterface: containerInterface, //"ctrz0",
 	}
 }
 
@@ -31,7 +31,7 @@ func (m Manager) SetUp(pid int, ip string, ports []string) (spec.Network, error)
 		return spec.Network{}, err
 	}
 	if err := m.SetupVeth(pid); err != nil {
-		return spec.Network{}, nil
+		return spec.Network{}, err
 	}
 	if err := syscall.Kill(pid, syscall.SIGCONT); err != nil {
 		return spec.Network{}, err

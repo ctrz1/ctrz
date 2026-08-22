@@ -7,8 +7,8 @@ import (
 	"fmt"
 	"log"
 
+	"ctrz/config"
 	"ctrz/runtime"
-	"ctrz/spec"
 
 	"github.com/spf13/cobra"
 )
@@ -17,21 +17,15 @@ var runCmd = &cobra.Command{
 	Use:   "run",
 	Short: "Run a new process in an isolated container",
 	Run: func(cmd *cobra.Command, args []string) {
-		if len(args) < 1 {
-			log.Fatal("At least one command must be provided")
-		}
-		name, cpu, pm, remove, detach := getFlags(cmd)
-		name, err := runtime.Name(name)
+		conf, confPath := getFlags(cmd)
+		conf.Command = &args
+		//name, err := runtime.Name(name)
+		//if err != nil {
+		//	log.Fatal(err)
+		//}
+		container, err := config.Get(&conf, confPath)
 		if err != nil {
 			log.Fatal(err)
-		}
-		container := spec.ContainerSpec{
-			Name:    name,
-			CPU:     cpu,
-			Command: args,
-			Remove:  remove,
-			Detach:  detach,
-			Ports:   pm,
 		}
 		r := runtime.New()
 		if err != nil {
@@ -52,26 +46,48 @@ func init() {
 	runCmd.Flags().String("name", "", "name of new container")
 	runCmd.Flags().StringArrayP("port", "p", []string{}, "Map host port to container port with '<host-port>:<container-port>'")
 	runCmd.Flags().Bool("rm", false, "Container automatically cleans up after finishing")
+	runCmd.Flags().String("config", "ctrz.yaml", "Path to container config")
 	runCmd.MarkFlagsRequiredTogether("runtime", "period")
 	runCmd.MarkFlagsMutuallyExclusive("cpu", "runtime")
 }
 
-func getFlags(cmd *cobra.Command) (string, string, []string, bool, bool) {
+func getFlags(cmd *cobra.Command) (config.CLIOptions, string) {
+	var c config.CLIOptions
 	detach, err := cmd.Flags().GetBool("detach")
 	if err != nil {
 		log.Fatal("error retrieving --detach (-d):", err)
 	}
+	if cmd.Flags().Changed("detach") {
+		c.Detach = &detach
+	}
+
 	name, err := cmd.Flags().GetString("name")
 	if err != nil {
 		log.Fatal("error retrieving --name:", err)
 	}
+	if cmd.Flags().Changed("name") {
+		c.Name = &name
+	}
+
 	remove, err := cmd.Flags().GetBool("rm")
 	if err != nil {
-		log.Fatal("error retrieving -rm:", err)
+		log.Fatal("error retrieving --rm:", err)
 	}
+	if cmd.Flags().Changed("remove") {
+		c.Remove = &remove
+	}
+
 	pm, err := cmd.Flags().GetStringArray("port")
 	if err != nil {
 		log.Fatal("error retrieving --port (-p)", err)
+	}
+	if cmd.Flags().Changed("port") {
+		c.Ports = &pm
+	}
+
+	conf, err := cmd.Flags().GetString("config")
+	if err != nil {
+		log.Fatal("error retrieving --config:", err)
 	}
 
 	period, err := cmd.Flags().GetInt("period")
@@ -85,6 +101,7 @@ func getFlags(cmd *cobra.Command) (string, string, []string, bool, bool) {
 	var maxCpu string
 	if period > 0 && rt > 0 {
 		maxCpu = fmt.Sprintf("%d %d", rt, period)
+		c.CPU = &maxCpu
 	} else {
 		cpu, err := cmd.Flags().GetInt("cpu")
 		if err != nil {
@@ -95,7 +112,10 @@ func getFlags(cmd *cobra.Command) (string, string, []string, bool, bool) {
 		}
 		quota := cpu * 1000
 		maxCpu = fmt.Sprintf("%d 100000", quota)
+		if cmd.Flags().Changed("cpu") {
+			c.CPU = &maxCpu
+		}
 	}
 
-	return name, maxCpu, pm, remove, detach
-}
+	return c, conf
+	}

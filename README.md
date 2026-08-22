@@ -4,7 +4,7 @@
 
 # ctrz
 
-`ctrz` is an image-less ad-hoc containerisation runtime. It lets you run statically linked binaries in an isolated environment. Find some [documentation](/examples/README.md) on how to use `ctrz`.
+`ctrz` is an image-less ad-hoc containerisation runtime. It lets you run statically linked binaries in an isolated environment. Find some [documentation](/docs/examples/README.md) on how to use `ctrz`.
 
 ## Installation
 
