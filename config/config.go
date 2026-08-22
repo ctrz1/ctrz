@@ -18,7 +18,7 @@ type CLIOptions struct {
 func Get(cont *CLIOptions, confPath string) (spec.ContainerSpec, error) {
 
 	c, err := load(confPath)
-	if err != nil && confPath != defaultConfPath{
+	if err != nil && confPath != defaultConfPath {
 		slog.Warn(fmt.Sprintf("Unable to load config at '%s': %v", confPath, err))
 	}
 

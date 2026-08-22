@@ -36,9 +36,9 @@ var rmCmd = &cobra.Command{
 
 		r := runtime.New()
 		if err := r.Remove(&spec.Removal{
-			Name: name,
-			Force: forceKill,
-			All: all,
+			Name:     name,
+			Force:    forceKill,
+			All:      all,
 			Inactive: inactive,
 		}); err != nil {
 			log.Fatal(err)

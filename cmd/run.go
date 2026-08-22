@@ -114,4 +114,4 @@ func getFlags(cmd *cobra.Command) (config.CLIOptions, string) {
 	}
 
 	return c, conf
-	}
+}
