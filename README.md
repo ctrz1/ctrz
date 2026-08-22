@@ -1,5 +1,5 @@
 
-<img src="./examples/assets/logo.png" width="200" style="display: block; margin: auto;">
+<img src="./docs/examples/assets/logo.png" width="200" style="display: block; margin: auto;">
 
 
 # ctrz

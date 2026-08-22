@@ -3,6 +3,6 @@ container:
     ports:
     - "8443:8443"
     cpu: 80
-    detach: true
+    detached: true
     command:
     - "demo-webserver"
