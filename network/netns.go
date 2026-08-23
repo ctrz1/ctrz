@@ -10,6 +10,8 @@ import (
 	"strings"
 
 	"ctrz/spec"
+
+	"github.com/vishvananda/netlink"
 )
 
 /**
@@ -36,18 +38,9 @@ func (m Manager) SetupHostNetworking() error {
 		return fmt.Errorf("enable ip_forward failed: %v: %s", err, out)
 	}
 
-	// Create bridge if missing
-	if err := exec.Command("ip", "link", "show", "ctrz-br0").Run(); err != nil {
-		if out, err := exec.Command("ip", "link", "add", "ctrz-br0", "type", "bridge").CombinedOutput(); err != nil {
-			return fmt.Errorf("create bridge failed: %v: %s", err, out)
-		}
-		if out, err := exec.Command("ip", "addr", "add", "10.200.1.1/24", "dev", "ctrz-br0").CombinedOutput(); err != nil {
-			return fmt.Errorf("assign bridge ip failed: %v: %s", err, out)
-		}
-	}
-
-	if out, err := exec.Command("ip", "link", "set", "ctrz-br0", "up").CombinedOutput(); err != nil {
-		return fmt.Errorf("bring bridge up failed: %v: %s", err, out)
+	_, err := ensureBridge(m.Bridge, m.Gateway)
+	if err != nil {
+		return fmt.Errorf("Error ensuring bridge: %v\n", err)
 	}
 
 	// NAT
@@ -262,4 +255,36 @@ func ensureRule(checkArgs, addArgs []string) error {
 	}
 
 	return nil
+}
+
+func ensureBridge(name, gateway string) (netlink.Link, error) {
+	link, err := netlink.LinkByName(name)
+	if err != nil {
+		attrs := netlink.NewLinkAttrs()
+		attrs.Name = name
+
+		link = &netlink.Bridge{
+			LinkAttrs: attrs,
+		}
+
+		if err := netlink.LinkAdd(link); err != nil {
+			return nil, fmt.Errorf("create bridge %s: %v", name, err)
+		}
+	}
+
+	if link.Type() != "bridge" {
+		return nil, fmt.Errorf("%s exists but is not a bridge", name)
+	}
+	addr, err := netlink.ParseAddr(gateway)
+	if err != nil {
+		return nil, fmt.Errorf("parse bridge subnet %s: %v", gateway, err)
+	}
+	if err := netlink.AddrReplace(link, addr); err != nil {
+		return nil, fmt.Errorf("configure bridge %s address %s: %v", name, gateway, err)
+	}
+	if err := netlink.LinkSetUp(link); err != nil {
+		return nil, fmt.Errorf("bring bridge %s up: %v", name, err)
+	}
+
+	return link, nil
 }

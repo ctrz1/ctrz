@@ -34,7 +34,10 @@ var rmCmd = &cobra.Command{
 			log.Fatalf("unable to retrieve all: %v\n", err)
 		}
 
-		r := runtime.New()
+		r, err := runtime.New()
+		if err != nil {
+			log.Fatal(err)
+		}
 		if err := r.Remove(&spec.Removal{
 			Name:     name,
 			Force:    forceKill,

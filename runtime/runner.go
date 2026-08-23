@@ -20,11 +20,15 @@ type Runtime struct {
 	CgroupManager  cgroup.Manager
 }
 
-func New() Runtime {
-	return Runtime{
-		NetworkManager: network.New("10.200.1.0/24", "ctrz-br0", "ctrz0"),
-		CgroupManager:  cgroup.New(),
+func New() (Runtime, error) {
+	netManager, err := network.New("10.200.1.0/24", "ctrz-br0", "ctrz0")
+	if err != nil {
+		return Runtime{}, err
 	}
+	return Runtime{
+		NetworkManager: netManager,
+		CgroupManager:  cgroup.New(),
+	}, nil
 }
 
 func (r Runtime) Run(cont *spec.ContainerSpec) error {

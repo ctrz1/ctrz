@@ -23,7 +23,7 @@ var runCmd = &cobra.Command{
 		if err != nil {
 			log.Fatal(err)
 		}
-		r := runtime.New()
+		r, err := runtime.New()
 		if err != nil {
 			log.Fatal(err)
 		}

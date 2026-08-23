@@ -4,22 +4,40 @@ package network
 
 import (
 	"ctrz/spec"
+	"fmt"
 	"log"
+	"net"
 	"syscall"
 )
 
 type Manager struct {
 	Subnet             string
+	Gateway            string
 	Bridge             string
 	ContainerInterface string
 }
 
-func New(subnet, bridge, containerInterface string) Manager {
+func New(subnet, bridge, containerInterface string) (Manager, error) {
+	gateway, err := gateway(subnet)
+	if err != nil {
+		return Manager{}, fmt.Errorf("Error creating network manager: %v\n", err)
+	}
 	return Manager{
 		Subnet:             subnet,             //"10.200.1.0/24",
+		Gateway:            gateway,            //"10.200.1.1/24",
 		Bridge:             bridge,             //"ctrz-br0",
 		ContainerInterface: containerInterface, //"ctrz0",
+	}, nil
+}
+
+func gateway(subnet string) (string, error) {
+	_, base, err := net.ParseCIDR(subnet)
+	if err != nil {
+		return "", fmt.Errorf("Could not parse subnet (%s): %v\n", subnet, err)
 	}
+	gateway := base.IP
+	gateway[3]++
+	return fmt.Sprintf("%s/24", gateway.String()), nil
 }
 
 func (m Manager) Initialise() (string, error) {
