@@ -5,6 +5,7 @@ package network
 
 import (
 	"fmt"
+	"net"
 	"os/exec"
 	"strconv"
 	"strings"
@@ -119,17 +120,52 @@ func (m Manager) SetupHostNetworking() error {
 }
 
 func (m Manager) SetupNetns(containerIP string) error {
-	if out, err := exec.Command("ip", "link", "set", "lo", "up").CombinedOutput(); err != nil {
-		return fmt.Errorf("loopback up failed: %v: %s", err, out)
+	lo, err := netlink.LinkByName("lo")
+	if err != nil {
+		return fmt.Errorf("Error finding loopback: %v\n", err)
 	}
-	if out, err := exec.Command("ip", "addr", "add", containerIP+"/24", "dev", "ctrz0").CombinedOutput(); err != nil {
-		return fmt.Errorf("assign container ip failed: %v: %s", err, out)
+
+	if err := netlink.LinkSetUp(lo); err != nil {
+		return fmt.Errorf("Error bringing loopback up: %v\n", err)
 	}
-	if out, err := exec.Command("ip", "link", "set", "ctrz0", "up").CombinedOutput(); err != nil {
-		return fmt.Errorf("container interface up failed: %v: %s", err, out)
+
+	link, err := netlink.LinkByName(m.ContainerInterface)
+	if err != nil {
+		return fmt.Errorf("Error finding %s: %v\n", m.ContainerInterface, err)
 	}
-	if out, err := exec.Command("ip", "route", "add", "default", "via", "10.200.1.1").CombinedOutput(); err != nil {
-		return fmt.Errorf("default route failed: %v: %s", err, out)
+
+	ip := net.ParseIP(containerIP)
+	if ip == nil {
+		return fmt.Errorf("Invalid container IP %s\n", containerIP)
+	}
+
+	addr := &netlink.Addr{
+		IPNet: &net.IPNet{
+			IP:   ip,
+			Mask: net.CIDRMask(24, 32),
+		},
+	}
+
+	if err := netlink.AddrAdd(link, addr); err != nil {
+		return fmt.Errorf("Error assigning container IP: %v\n", err)
+	}
+
+	if err := netlink.LinkSetUp(link); err != nil {
+		return fmt.Errorf("Error bringing container interface up: %v\n", err)
+	}
+
+	gateway := net.ParseIP(strings.Split(m.Gateway, "/")[0])
+	if gateway == nil {
+		return fmt.Errorf("Invalid gateway %s\n", m.Gateway)
+	}
+
+	route := &netlink.Route{
+		LinkIndex: link.Attrs().Index,
+		Gw:        gateway,
+	}
+
+	if err := netlink.RouteAdd(route); err != nil {
+		return fmt.Errorf("Error adding default route: %v\n", err)
 	}
 
 	return nil
