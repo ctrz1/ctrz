@@ -5,7 +5,6 @@ package network
 import (
 	"ctrz/spec"
 	"fmt"
-	"log"
 	"net"
 	"syscall"
 )
@@ -43,6 +42,9 @@ func gateway(subnet string) (string, error) {
 
 func (m *Manager) Initialise() (string, error) {
 	if err := m.initialiseNftables(); err != nil {
+		return "", err
+	}
+	if err := m.addNftChains(); err != nil {
 		return "", err
 	}
 	return AssignContIP()
@@ -94,9 +96,18 @@ func (m Manager) Configure() {
 
 }
 
-func (m Manager) Cleanup(network spec.Network) error {
+func (m *Manager) Cleanup(network spec.Network) error {
+	if err := m.initialiseNftables(); err != nil {
+		return err
+	}
+	if err := m.getChains(); err != nil {
+		return err
+	}
 	if err := removeIPTableRules(network); err != nil {
-		log.Fatal(err)
+		return err
+	}
+	if err := m.removeContainerNetworking(network); err != nil {
+		return err
 	}
 	if err := RemoveContIP(network.IP); err != nil {
 		return err

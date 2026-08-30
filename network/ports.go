@@ -28,13 +28,16 @@ func (m Manager) exposePort(ports, containerIP string) (int, int, error) {
 		return -1, -1, fmt.Errorf("Error parsing ports: %v\n", err)
 	}
 
+	ruleID := fmt.Sprintf("ctrz:%s:%d:%d", containerIP, pm.HostPort, pm.ContainerPort)
+
 	c := m.Nftables.Conn
 	table := m.Nftables.Table
 
 	// https://github.com/kubernetes-sigs/kube-network-policies/blob/89fb3de67c61ef275d4c8b9a5d632ad99ea03cc1/pkg/dns/dnsagent.go#L172
 	c.AddRule(&nftables.Rule{
-		Table: table,
-		Chain: m.Nftables.Prerouting,
+		Table:    table,
+		Chain:    m.Nftables.Prerouting,
+		UserData: []byte(ruleID),
 		Exprs: []expr.Any{
 			&expr.Meta{
 				Key:      expr.MetaKeyL4PROTO,
@@ -78,8 +81,9 @@ func (m Manager) exposePort(ports, containerIP string) (int, int, error) {
 	})
 
 	c.AddRule(&nftables.Rule{
-		Table: table,
-		Chain: m.Nftables.Output,
+		Table:    table,
+		Chain:    m.Nftables.Output,
+		UserData: []byte(ruleID),
 		Exprs: []expr.Any{
 			&expr.Meta{
 				Key:      expr.MetaKeyL4PROTO,
@@ -143,8 +147,9 @@ func (m Manager) exposePort(ports, containerIP string) (int, int, error) {
 	})
 
 	c.AddRule(&nftables.Rule{
-		Table: table,
-		Chain: m.Nftables.Forward,
+		Table:    table,
+		Chain:    m.Nftables.Forward,
+		UserData: []byte(ruleID),
 		Exprs: []expr.Any{
 			&expr.Meta{
 				Key:      expr.MetaKeyL4PROTO,
