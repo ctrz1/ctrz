@@ -16,7 +16,7 @@ import (
 )
 
 type Runtime struct {
-	NetworkManager network.Manager
+	NetworkManager *network.Manager
 	CgroupManager  cgroup.Manager
 }
 
@@ -26,7 +26,7 @@ func New() (Runtime, error) {
 		return Runtime{}, err
 	}
 	return Runtime{
-		NetworkManager: netManager,
+		NetworkManager: &netManager,
 		CgroupManager:  cgroup.New(),
 	}, nil
 }

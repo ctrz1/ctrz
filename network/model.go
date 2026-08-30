@@ -2,6 +2,8 @@ package network
 
 import (
 	"net"
+
+	"github.com/google/nftables"
 )
 
 type TCPSocket struct {
@@ -37,4 +39,12 @@ type Interface struct {
 type VethPair struct {
 	ContainerInterface string
 	HostInterface      string
+}
+
+type nft struct {
+	Conn       *nftables.Conn
+	Table      *nftables.Table
+	Prerouting *nftables.Chain
+	Output     *nftables.Chain
+	Forward    *nftables.Chain
 }

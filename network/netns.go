@@ -22,7 +22,13 @@ import (
 **/
 
 func (m Manager) SetupHostNetworking() error {
-	// Enable IPv4 forwarding
+	if out, err := exec.Command(
+		"sysctl",
+		"-w",
+		"net.ipv6.conf.all.forwarding=1",
+	).CombinedOutput(); err != nil {
+		return fmt.Errorf("enable ipv6_forwarding failed: %v: %s", err, out)
+	}
 	if out, err := exec.Command(
 		"sysctl",
 		"-w",
@@ -30,7 +36,7 @@ func (m Manager) SetupHostNetworking() error {
 	).CombinedOutput(); err != nil {
 		return fmt.Errorf("enable ip_forward failed: %v: %s", err, out)
 	}
-
+	//TODO: review this one (CVE-2020-8558)
 	if out, err := exec.Command(
 		"sysctl",
 		"-w",
@@ -169,52 +175,6 @@ func (m Manager) SetupNetns(containerIP string) error {
 	}
 
 	return nil
-}
-
-func ExposePort(ports, containerIP string) (int, int, error) {
-	pm, err := parsePorts(ports)
-	if err != nil {
-		return -1, -1, err
-	}
-
-	cmds := [][]string{
-		{
-			"iptables",
-			"-t", "nat",
-			"-I", "PREROUTING", "1",
-			"-p", "tcp",
-			"--dport", strconv.Itoa(pm.HostPort),
-			"-j", "DNAT",
-			"--to-destination",
-			fmt.Sprintf("%s:%d", containerIP, pm.ContainerPort),
-		},
-		{
-			"iptables",
-			"-I", "FORWARD", "1",
-			"-p", "tcp",
-			"-d", containerIP,
-			"--dport", strconv.Itoa(pm.ContainerPort),
-			"-j", "ACCEPT",
-		},
-		{
-			"iptables",
-			"-t", "nat",
-			"-I", "OUTPUT", "1",
-			"-p", "tcp",
-			"-d", "127.0.0.0/8",
-			"--dport", strconv.Itoa(pm.HostPort),
-			"-j", "DNAT", "--to-destination", fmt.Sprintf("%s:%d", containerIP, pm.ContainerPort),
-		},
-	}
-
-	for _, c := range cmds {
-		out, err := exec.Command(c[0], c[1:]...).CombinedOutput()
-		if err != nil {
-			return -1, -1, fmt.Errorf("%v: %s", err, out)
-		}
-	}
-
-	return pm.HostPort, pm.ContainerPort, nil
 }
 
 func parsePorts(ports string) (spec.PortMapping, error) {
