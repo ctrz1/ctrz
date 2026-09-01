@@ -5,11 +5,14 @@ package network
 
 import (
 	"fmt"
+	"net"
 	"os/exec"
 	"strconv"
 	"strings"
 
 	"ctrz/spec"
+
+	"github.com/vishvananda/netlink"
 )
 
 /**
@@ -36,18 +39,9 @@ func (m Manager) SetupHostNetworking() error {
 		return fmt.Errorf("enable ip_forward failed: %v: %s", err, out)
 	}
 
-	// Create bridge if missing
-	if err := exec.Command("ip", "link", "show", "ctrz-br0").Run(); err != nil {
-		if out, err := exec.Command("ip", "link", "add", "ctrz-br0", "type", "bridge").CombinedOutput(); err != nil {
-			return fmt.Errorf("create bridge failed: %v: %s", err, out)
-		}
-		if out, err := exec.Command("ip", "addr", "add", "10.200.1.1/24", "dev", "ctrz-br0").CombinedOutput(); err != nil {
-			return fmt.Errorf("assign bridge ip failed: %v: %s", err, out)
-		}
-	}
-
-	if out, err := exec.Command("ip", "link", "set", "ctrz-br0", "up").CombinedOutput(); err != nil {
-		return fmt.Errorf("bring bridge up failed: %v: %s", err, out)
+	_, err := ensureBridge(m.Bridge, m.Gateway)
+	if err != nil {
+		return fmt.Errorf("Error ensuring bridge: %v\n", err)
 	}
 
 	// NAT
@@ -126,17 +120,52 @@ func (m Manager) SetupHostNetworking() error {
 }
 
 func (m Manager) SetupNetns(containerIP string) error {
-	if out, err := exec.Command("ip", "link", "set", "lo", "up").CombinedOutput(); err != nil {
-		return fmt.Errorf("loopback up failed: %v: %s", err, out)
+	lo, err := netlink.LinkByName("lo")
+	if err != nil {
+		return fmt.Errorf("Error finding loopback: %v\n", err)
 	}
-	if out, err := exec.Command("ip", "addr", "add", containerIP+"/24", "dev", "ctrz0").CombinedOutput(); err != nil {
-		return fmt.Errorf("assign container ip failed: %v: %s", err, out)
+
+	if err := netlink.LinkSetUp(lo); err != nil {
+		return fmt.Errorf("Error bringing loopback up: %v\n", err)
 	}
-	if out, err := exec.Command("ip", "link", "set", "ctrz0", "up").CombinedOutput(); err != nil {
-		return fmt.Errorf("container interface up failed: %v: %s", err, out)
+
+	link, err := netlink.LinkByName(m.ContainerInterface)
+	if err != nil {
+		return fmt.Errorf("Error finding %s: %v\n", m.ContainerInterface, err)
 	}
-	if out, err := exec.Command("ip", "route", "add", "default", "via", "10.200.1.1").CombinedOutput(); err != nil {
-		return fmt.Errorf("default route failed: %v: %s", err, out)
+
+	ip := net.ParseIP(containerIP)
+	if ip == nil {
+		return fmt.Errorf("Invalid container IP %s\n", containerIP)
+	}
+
+	addr := &netlink.Addr{
+		IPNet: &net.IPNet{
+			IP:   ip,
+			Mask: net.CIDRMask(24, 32),
+		},
+	}
+
+	if err := netlink.AddrAdd(link, addr); err != nil {
+		return fmt.Errorf("Error assigning container IP: %v\n", err)
+	}
+
+	if err := netlink.LinkSetUp(link); err != nil {
+		return fmt.Errorf("Error bringing container interface up: %v\n", err)
+	}
+
+	gateway := net.ParseIP(strings.Split(m.Gateway, "/")[0])
+	if gateway == nil {
+		return fmt.Errorf("Invalid gateway %s\n", m.Gateway)
+	}
+
+	route := &netlink.Route{
+		LinkIndex: link.Attrs().Index,
+		Gw:        gateway,
+	}
+
+	if err := netlink.RouteAdd(route); err != nil {
+		return fmt.Errorf("Error adding default route: %v\n", err)
 	}
 
 	return nil
@@ -262,4 +291,36 @@ func ensureRule(checkArgs, addArgs []string) error {
 	}
 
 	return nil
+}
+
+func ensureBridge(name, gateway string) (netlink.Link, error) {
+	link, err := netlink.LinkByName(name)
+	if err != nil {
+		attrs := netlink.NewLinkAttrs()
+		attrs.Name = name
+
+		link = &netlink.Bridge{
+			LinkAttrs: attrs,
+		}
+
+		if err := netlink.LinkAdd(link); err != nil {
+			return nil, fmt.Errorf("create bridge %s: %v", name, err)
+		}
+	}
+
+	if link.Type() != "bridge" {
+		return nil, fmt.Errorf("%s exists but is not a bridge", name)
+	}
+	addr, err := netlink.ParseAddr(gateway)
+	if err != nil {
+		return nil, fmt.Errorf("parse bridge subnet %s: %v", gateway, err)
+	}
+	if err := netlink.AddrReplace(link, addr); err != nil {
+		return nil, fmt.Errorf("configure bridge %s address %s: %v", name, gateway, err)
+	}
+	if err := netlink.LinkSetUp(link); err != nil {
+		return nil, fmt.Errorf("bring bridge %s up: %v", name, err)
+	}
+
+	return link, nil
 }

@@ -1,15 +1,12 @@
+//go:build linux
+
 package network
 
 import (
 	"ctrz/spec"
-	"ctrz/utils"
 	"fmt"
-	"log"
-	"os"
 	"os/exec"
-	"path/filepath"
 	"strconv"
-	"syscall"
 )
 
 const (
@@ -41,36 +38,6 @@ const (
 	CONNTRACK         = "conntrack"
 	TO_DESTINATION    = "--to-destination"
 )
-
-func RemoveContainerByName(name string, forceKill bool, pid int, network spec.Network) error {
-	dir, err := utils.CtrzStateDir()
-	if err != nil {
-		return err
-	}
-	_, err = os.Open(fmt.Sprintf("/proc/%d/stat", pid))
-	if err == nil {
-		fmt.Printf("Killing process %d\n", pid)
-		if forceKill {
-			if err := syscall.Kill(pid, syscall.SIGKILL); err != nil {
-				return fmt.Errorf("Error killing container: %v\n", err)
-			}
-		} else {
-			if err := syscall.Kill(pid, syscall.SIGTERM); err != nil {
-				return fmt.Errorf("Error killing container: %v\n", err)
-			}
-		}
-	}
-	if err := removeIPTableRules(network); err != nil {
-		log.Fatal(err)
-	}
-	if err := os.RemoveAll(filepath.Join(dir, "containers", name)); err != nil {
-		return err
-	}
-	if err := RemoveContIP(network.IP); err != nil {
-		return err
-	}
-	return nil
-}
 
 func removeIPTableRules(network spec.Network) error {
 	for i := range network.Ports {

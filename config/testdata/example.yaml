@@ -1,0 +1,8 @@
+container:
+  demo:
+    ports:
+    - "8443:8443"
+    cpu: 80
+    detached: true
+    command:
+    - "demo-webserver"

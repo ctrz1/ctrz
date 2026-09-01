@@ -1,0 +1,10 @@
+# This file has .txt extension so IDE linters do not complain
+
+container:
+      demo:
+    ports:
+    - "8443:8443"
+    cpu: 80
+    detached: true
+    command:
+    - "demo-webserver"

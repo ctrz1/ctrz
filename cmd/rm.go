@@ -4,11 +4,8 @@
 package cmd
 
 import (
-	"fmt"
 	"log"
 
-	"ctrz/network"
-	"ctrz/proc"
 	"ctrz/runtime"
 	"ctrz/spec"
 
@@ -17,7 +14,7 @@ import (
 
 var rmCmd = &cobra.Command{
 	Use:   "rm",
-	Short: "Remove a containern and all of its data (including stats)",
+	Short: "Remove a container and all of its data (including stats)",
 
 	Run: func(cmd *cobra.Command, args []string) {
 		name, err := cmd.Flags().GetString("name")
@@ -36,27 +33,18 @@ var rmCmd = &cobra.Command{
 		if err != nil {
 			log.Fatalf("unable to retrieve all: %v\n", err)
 		}
-		if inactive || all {
-			containers, err := runtime.RetrieveAllContainers()
-			if err != nil {
-				log.Fatalf("Could not retrieve list of containers: %v\n", err)
-			}
-			for _, c := range containers {
-				containerMeta, err := runtime.GetContainerDataFromName(c)
-				if err != nil {
-					continue
-				}
-				if !proc.IsProcActive(containerMeta.PID, containerMeta.StartTime) || all {
-					if err := network.RemoveContainerByName(c, forceKill, containerMeta.PID, containerMeta.NetworkSpec); err != nil {
-						fmt.Printf("Error removing container: %v\n", err)
-					}
-				}
-			}
-			return
+
+		r, err := runtime.New()
+		if err != nil {
+			log.Fatal(err)
 		}
-		// TODO: Use smth like runtime.Kill(name, forcekill, inactive, all)
-		if err := network.RemoveContainerByName(name, forceKill, 1000, spec.Network{}); err != nil {
-			log.Fatalf("Error cleaning up container: %v", err)
+		if err := r.Remove(&spec.Removal{
+			Name:     name,
+			Force:    forceKill,
+			All:      all,
+			Inactive: inactive,
+		}); err != nil {
+			log.Fatal(err)
 		}
 	},
 }

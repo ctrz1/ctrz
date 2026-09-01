@@ -11,6 +11,11 @@ import (
 	"strings"
 )
 
+/**
+*	This implementation of IP allocation is prone to race conditions
+*	If two instances of ctrz try to create a container at the same, they might end up with the same IP
+**/
+
 func AssignContIP() (ip string, err error) {
 	dir, err := utils.CtrzStateDir()
 	if err != nil {
@@ -48,9 +53,14 @@ func AssignContIP() (ip string, err error) {
 func assignedIPs(dir string) ([]string, error) {
 	b, err := os.ReadFile(filepath.Join(dir, "containers", "IP"))
 	if err != nil {
-		return []string{}, fmt.Errorf("Error reading IP file: %v\n", err)
+		return nil, fmt.Errorf("Error reading IP file: %v\n", err)
 	}
-	data := string(b)
+
+	data := strings.TrimSpace(string(b))
+	if data == "" {
+		return []string{}, nil
+	}
+
 	return strings.Split(data, "\n"), nil
 }
 
@@ -99,11 +109,7 @@ func RemoveContIP(containerIP string) (err error) {
 		}
 		remainingIPs = append(remainingIPs, ip)
 	}
-	if err := os.Remove(filepath.Join(dir, "containers", "IP")); err != nil {
-		fmt.Printf("Warning: Could not find IP file to remove container IP: %v\n", err)
-		return nil
-	}
-	f, err := os.OpenFile(filepath.Join(dir, "containers", "IP"), os.O_WRONLY|os.O_TRUNC|os.O_CREATE, 0o755)
+	f, err := os.OpenFile(filepath.Join(dir, "containers", "IP.temp"), os.O_WRONLY|os.O_TRUNC|os.O_CREATE, 0o755)
 	if err != nil {
 		return fmt.Errorf("Error opening IP file: %v\n", err)
 	}
@@ -111,10 +117,18 @@ func RemoveContIP(containerIP string) (err error) {
 		err = errors.Join(err, f.Close())
 	}()
 	for _, ip := range remainingIPs {
-		// If this fails mid-loop, it leaves data inconsistent with existing containers
 		if _, err := fmt.Fprintf(f, "%s\n", ip); err != nil {
-			return err
+			if rmErr := os.Remove(f.Name()); rmErr != nil {
+				return fmt.Errorf("Error cleaning up IP.temp: %v\nError printing to IP.temp: %v\n", rmErr, err)
+			}
+			return fmt.Errorf("Error printing to IP.temp: %v\n", err)
 		}
+	}
+	if err := os.Rename(f.Name(), filepath.Join(dir, "containers", "IP")); err != nil {
+		if rmErr := os.Remove(f.Name()); rmErr != nil {
+			return fmt.Errorf("Error cleaning up IP.temp: %v\nError renamining IP.temp to IP: %v\n", rmErr, err)
+		}
+		return fmt.Errorf("Error renamining IP.temp to IP: %v\n", err)
 	}
 	return nil
 }

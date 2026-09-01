@@ -7,7 +7,7 @@ import (
 )
 
 func (m Manager) EnabledControllers() (map[string]bool, error) {
-	data, err := os.ReadFile(filepath.Join("sys", "fs", "cgroup", "cgroup.controllers"))
+	data, err := os.ReadFile(filepath.Join("/", "sys", "fs", "cgroup", "cgroup.controllers"))
 	if err != nil {
 		return nil, err
 	}
