@@ -20,3 +20,8 @@ curl -fsSL https://raw.githubusercontent.com/ctrz1/ctrz/main/install | sudo bash
 
 2) Manually download a binary from the [releases](https://github.com/ctrz1/ctrz/releases)
 3) Clone the repo and build the project yourself using `make build`.
+
+## Requirements
+
+1. To fully run and use `ctrz`, root privileges are required. Rootless containers are not supported. It is recommended to use `sudo ctrz ...` for all commands.
+2. `ctrz` is currently still using `iptables` to define networking rules. An effort to migrate to `nftables` is being made [here](https://github.com/ctrz1/ctrz/tree/nftables).

@@ -82,12 +82,14 @@ func (r Runtime) Run(cont *spec.ContainerSpec) error {
 		}
 	}
 	if cont.Remove && !cont.Detach {
-		r.Remove(&spec.Removal{
+		if err := r.Remove(&spec.Removal{
 			Name:     cont.Name,
 			Force:    false,
 			All:      false,
 			Inactive: false,
-		})
+		}); err != nil {
+			return err
+		}
 	}
 	return nil
 }
