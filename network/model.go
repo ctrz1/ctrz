@@ -47,4 +47,5 @@ type nft struct {
 	Prerouting *nftables.Chain
 	Output     *nftables.Chain
 	Forward    *nftables.Chain
+	Postruting *nftables.Chain
 }

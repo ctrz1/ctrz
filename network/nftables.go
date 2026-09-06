@@ -58,6 +58,14 @@ func (m *Manager) addNftChains() error {
 		Priority: nftables.ChainPriorityFilter,
 	})
 
+	m.Nftables.Postruting = c.AddChain(&nftables.Chain{
+		Table:    table,
+		Name:     "postrouting",
+		Type:     nftables.ChainTypeNAT,
+		Hooknum:  nftables.ChainHookPostrouting,
+		Priority: nftables.ChainPriorityNATSource,
+	})
+
 	if err := c.Flush(); err != nil {
 		return fmt.Errorf("Error creating ctrz chains: %v\n", err)
 	}
@@ -73,16 +81,16 @@ func (m *Manager) getChains() error {
 	}
 
 	for _, chain := range chains {
-			switch chain.Name {
-			case "prerouting":
-				m.Nftables.Prerouting = chain
-			case "output":
-				m.Nftables.Output = chain
-			case "forward":
-				m.Nftables.Forward = chain
-			default:
-				continue
-			}
+		switch chain.Name {
+		case "prerouting":
+			m.Nftables.Prerouting = chain
+		case "output":
+			m.Nftables.Output = chain
+		case "forward":
+			m.Nftables.Forward = chain
+		default:
+			continue
+		}
 	}
 	return nil
 }

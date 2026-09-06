@@ -12,6 +12,9 @@ import (
 
 	"ctrz/spec"
 
+	"github.com/google/nftables"
+	"github.com/google/nftables/binaryutil"
+	"github.com/google/nftables/expr"
 	"github.com/vishvananda/netlink"
 )
 
@@ -50,76 +53,16 @@ func (m Manager) SetupHostNetworking() error {
 		return fmt.Errorf("Error ensuring bridge: %v\n", err)
 	}
 
-	// NAT
-	if err := ensureRule(
-		[]string{
-			"-t", "nat",
-			"-C", "POSTROUTING",
-			"-s", "10.200.1.0/24",
-			"-j", "MASQUERADE",
-		},
-		[]string{
-			"-t", "nat",
-			"-A", "POSTROUTING",
-			"-s", "10.200.1.0/24",
-			"-j", "MASQUERADE",
-		},
-	); err != nil {
-		return err
-	}
-	if err := ensureRule(
-		[]string{
-			"-t", "nat",
-			"-A", "POSTROUTING",
-			"-s", "127.0.0.0/8",
-			"-d", "10.200.1.0/24",
-			"-j", "MASQUERADE",
-		},
-		[]string{
-			"-t", "nat",
-			"-A", "POSTROUTING",
-			"-s", "127.0.0.0/8",
-			"-d", "10.200.1.0/24",
-			"-j", "MASQUERADE",
-		},
-	); err != nil {
-		return err
+	if err := m.nat(); err != nil {
+		return fmt.Errorf("Error establishing NAT rules: %v\n", err)
 	}
 
-	// Allow outbound forwarding
-	if err := ensureRule(
-		[]string{
-			"-C", "FORWARD",
-			"-i", "ctrz-br0",
-			"-j", "ACCEPT",
-		},
-		[]string{
-			"-A", "FORWARD",
-			"-i", "ctrz-br0",
-			"-j", "ACCEPT",
-		},
-	); err != nil {
-		return err
+	if err := m.outboundForward(); err != nil {
+		return fmt.Errorf("Error establishing oubound rule: %v\n", err)
 	}
 
-	// Allow return traffic
-	if err := ensureRule(
-		[]string{
-			"-C", "FORWARD",
-			"-o", "ctrz-br0",
-			"-m", "conntrack",
-			"--ctstate", "ESTABLISHED,RELATED",
-			"-j", "ACCEPT",
-		},
-		[]string{
-			"-A", "FORWARD",
-			"-o", "ctrz-br0",
-			"-m", "conntrack",
-			"--ctstate", "ESTABLISHED,RELATED",
-			"-j", "ACCEPT",
-		},
-	); err != nil {
-		return err
+	if err := m.allowReturnTraffic(); err != nil {
+		return fmt.Errorf("Error allowing return traffic: %v\n", err)
 	}
 
 	return nil
@@ -215,44 +158,6 @@ func DenyAllElse(containerIP string) error {
 	return nil
 }
 
-func ruleExists(args ...string) (bool, error) {
-	cmd := exec.Command("iptables", args...)
-	err := cmd.Run()
-
-	if err == nil {
-		return true, nil
-	}
-
-	exitErr, ok := err.(*exec.ExitError)
-	if !ok {
-		return false, err
-	}
-
-	if exitErr.ExitCode() == 1 {
-		return false, nil
-	}
-
-	return false, err
-}
-
-func ensureRule(checkArgs, addArgs []string) error {
-	exists, err := ruleExists(checkArgs...)
-	if err != nil {
-		return err
-	}
-
-	if exists {
-		return nil
-	}
-
-	out, err := exec.Command("iptables", addArgs...).CombinedOutput()
-	if err != nil {
-		return fmt.Errorf("iptables failed: %v: %s", err, out)
-	}
-
-	return nil
-}
-
 func ensureBridge(name, gateway string) (netlink.Link, error) {
 	link, err := netlink.LinkByName(name)
 	if err != nil {
@@ -283,4 +188,176 @@ func ensureBridge(name, gateway string) (netlink.Link, error) {
 	}
 
 	return link, nil
+}
+
+func (m Manager) nat() error {
+
+	//TODO: make sure to only create these rules once and not over and over again with every container 
+	//e.g.:
+	/*
+	outboundRuleId := fmt.Sprintf("ctrz:nat:%s", m.Subnet)
+	inboundRuleId := "ctrz:nat:127.0.0.0/8"
+	rules, err := c.GetRules(table, m.Nftables.Postruting)
+	for _, rule := range rules {
+		...
+	}
+	*/
+
+	
+
+	c := m.Nftables.Conn
+	table := m.Nftables.Table
+
+	_, subnet, err := net.ParseCIDR(m.Subnet)
+	if err != nil {
+		return fmt.Errorf("Error parsing subnet %s: %v\n", m.Subnet, err)
+	}
+
+	subnetIP := subnet.IP.To4()
+	if subnetIP == nil {
+		return fmt.Errorf("Subnet %s is not IPv4\n", m.Subnet)
+	}
+
+	ones, bits := subnet.Mask.Size()
+	if bits != 32 || ones != 24 {
+		return fmt.Errorf("Subnet %s must be an IPv4 /24", m.Subnet)
+	}
+
+	// iptables -t nat -A POSTROUTING -s 10.200.1.0/24 -j MASQUERADE
+	outbound := &nftables.Rule{
+		Table: table,
+		Chain: m.Nftables.Postruting,
+		Exprs: []expr.Any{
+			&expr.Payload{
+				DestRegister: reg1,
+				Base:         expr.PayloadBaseNetworkHeader,
+				Len:          3,
+				Offset:       12,
+			},
+			&expr.Cmp{
+				Op:       expr.CmpOpEq,
+				Register: reg1,
+				Data:     subnetIP[:3],
+			},
+			&expr.Masq{},
+		},
+	}
+
+	// iptables -t nat -A POSTROUTING -s 127.0.0.0/8 -d 10.200.1.0/24 -j MASQUERADE
+	inbound := &nftables.Rule{
+		Table: table,
+		Chain: m.Nftables.Postruting,
+		Exprs: []expr.Any{
+			&expr.Payload{
+				DestRegister: reg1,
+				Base:         expr.PayloadBaseNetworkHeader,
+				Len:          1,
+				Offset:       12,
+			},
+			&expr.Cmp{
+				Op:       expr.CmpOpEq,
+				Register: reg1,
+				Data:     []byte{127},
+			},
+			&expr.Payload{
+				DestRegister: reg1,
+				Base:         expr.PayloadBaseNetworkHeader,
+				Len:          3,
+				Offset:       16,
+			},
+			&expr.Cmp{
+				Op:       expr.CmpOpEq,
+				Register: reg1,
+				Data:     subnetIP[:3],
+			},
+			&expr.Masq{},
+		},
+	}
+
+	c.AddRule(outbound)
+	c.AddRule(inbound)
+
+	return c.Flush()
+}
+
+func (m Manager) outboundForward() error {
+	c := m.Nftables.Conn
+	table := m.Nftables.Table
+
+	// iptables -A FORWARD -i ctrz-br0 -j ACCEPT
+	// add rule ip ctrz forward iifname "ctrz-br0" accept
+	c.AddRule(&nftables.Rule{
+		Table: table,
+		Chain: m.Nftables.Forward,
+		Exprs: []expr.Any{
+			&expr.Meta{
+				Key:      expr.MetaKeyIIFNAME,
+				Register: reg1,
+			},
+			&expr.Cmp{
+				Op:       expr.CmpOpEq,
+				Register: reg1,
+				Data:     []byte(m.Bridge),
+			},
+			&expr.Verdict{
+				Kind: expr.VerdictAccept,
+			},
+		},
+	})
+
+	return c.Flush()
+}
+
+func (m Manager) allowReturnTraffic() error {
+	/*
+		iptables -A FORWARD -o ctrz-br0 -m conntrack --cstate ESTABLISHED,RELATED -j ACCEPT
+		sudo nft --debug=netlink add rule ip ctrz forward oifname "ctrz-br0" ct state established,related accept
+
+		  [ meta load oifname => reg 1 ]
+		  [ cmp eq reg 1 0x7a727463 0x3072622d 0x00000000 0x00000000 ]
+		  [ ct load state => reg 1 ]
+		  [ bitwise reg 1 = ( reg 1 & 0x00000006 ) ^ 0x00000000 ]
+		  [ cmp neq reg 1 0x00000000 ]
+		  [ immediate reg 0 accept ]
+
+	*/
+	c := m.Nftables.Conn
+	table := m.Nftables.Table
+
+	c.AddRule(&nftables.Rule{
+		Table: table,
+		Chain: m.Nftables.Forward,
+		Exprs: []expr.Any{
+			&expr.Meta{
+				Key:      expr.MetaKeyOIFNAME,
+				Register: reg1,
+			},
+			&expr.Cmp{
+				Op:       expr.CmpOpEq,
+				Register: reg1,
+				Data:     []byte(m.Bridge),
+			},
+			&expr.Ct{
+				Key:      expr.CtKeySTATE,
+				Register: reg1,
+			},
+			&expr.Bitwise{
+				SourceRegister: reg1,
+				DestRegister:   reg1,
+				Len:            4,
+				Mask:           binaryutil.BigEndian.PutUint32(expr.CtStateBitESTABLISHED | expr.CtStateBitRELATED),
+				Xor:            []byte{0, 0, 0, 0},
+			},
+			&expr.Cmp{
+				Op:       expr.CmpOpNeq,
+				Register: reg1,
+				Data:     []byte{0, 0, 0, 0},
+			},
+			&expr.Verdict{
+				Kind: expr.VerdictAccept,
+			},
+		},
+	})
+
+	return c.Flush()
 }
