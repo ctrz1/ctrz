@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"ctrz/utils"
 	"log"
 	"os"
 
@@ -12,6 +13,7 @@ var daemonCmd = &cobra.Command{
 	Short: "control ctrz daemon process",
 	Args:  cobra.ExactArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
+		utils.EnsureRoot()
 		if err := cmd.Usage(); err != nil {
 			log.Fatal(err)
 		}

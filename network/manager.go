@@ -5,7 +5,6 @@ package network
 import (
 	"ctrz/spec"
 	"fmt"
-	"log"
 	"net"
 	"syscall"
 )
@@ -15,6 +14,7 @@ type Manager struct {
 	Gateway            string
 	Bridge             string
 	ContainerInterface string
+	Nftables           nft
 }
 
 func New(subnet, bridge, containerInterface string) (Manager, error) {
@@ -40,7 +40,13 @@ func gateway(subnet string) (string, error) {
 	return fmt.Sprintf("%s/24", gateway.String()), nil
 }
 
-func (m Manager) Initialise() (string, error) {
+func (m *Manager) Initialise() (string, error) {
+	if err := m.initialiseNftables(); err != nil {
+		return "", err
+	}
+	if err := m.addNftChains(); err != nil {
+		return "", err
+	}
 	return AssignContIP()
 }
 
@@ -54,16 +60,16 @@ func (m Manager) SetUp(pid int, ip string, ports []string) (spec.Network, error)
 	if err := syscall.Kill(pid, syscall.SIGCONT); err != nil {
 		return spec.Network{}, err
 	}
-	if err := DenyAllElse(ip); err != nil {
-		return spec.Network{}, err
-	}
 	var hostPorts []int
 	var containerPorts []int
 	for _, p := range ports {
-		hostPort, containerPort, err := ExposePort(p, ip)
+		hostPort, containerPort, err := m.exposePort(p, ip)
 		if err != nil {
 			return spec.Network{}, err
 		}
+		//if err := m.bindToBroadcast(hostPort, containerPort, ip); err != nil {
+		//	return spec.Network{}, err
+		//}
 
 		hostPorts = append(hostPorts, hostPort)
 		containerPorts = append(containerPorts, containerPort)
@@ -87,9 +93,15 @@ func (m Manager) Configure() {
 
 }
 
-func (m Manager) Cleanup(network spec.Network) error {
-	if err := removeIPTableRules(network); err != nil {
-		log.Fatal(err)
+func (m *Manager) Cleanup(network spec.Network) error {
+	if err := m.initialiseNftables(); err != nil {
+		return err
+	}
+	if err := m.getChains(); err != nil {
+		return err
+	}
+	if err := m.removeContainerNetworking(network); err != nil {
+		return err
 	}
 	if err := RemoveContIP(network.IP); err != nil {
 		return err

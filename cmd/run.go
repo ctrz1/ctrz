@@ -9,6 +9,7 @@ import (
 
 	"ctrz/config"
 	"ctrz/runtime"
+	"ctrz/utils"
 
 	"github.com/spf13/cobra"
 )
@@ -17,6 +18,7 @@ var runCmd = &cobra.Command{
 	Use:   "run",
 	Short: "Run a new process in an isolated container",
 	Run: func(cmd *cobra.Command, args []string) {
+		utils.EnsureRoot()
 		conf, confPath := getFlags(cmd)
 		conf.Command = &args
 		container, err := config.Get(&conf, confPath)

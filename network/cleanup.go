@@ -5,115 +5,61 @@ package network
 import (
 	"ctrz/spec"
 	"fmt"
-	"os/exec"
-	"strconv"
+	"log/slog"
+
+	"github.com/google/nftables"
 )
 
-const (
-	IPSUBNET = "10.200.1.0/24"
+func (m Manager) removeContainerNetworking(network spec.Network) error {
 
-	IPTABLES          = "iptables"
-	PREROUTING        = "PREROUTING"
-	OUTPUT            = "OUTPUT"
-	INPUT             = "INPUT"
-	POSTROUTING       = "POSTROUTING"
-	MASQUERADE        = "MASQUERADE"
-	DNAT              = "DNAT"
-	FORWARD           = "FORWARD"
-	ACCEPT            = "ACCEPT"
-	DROP              = "DROP"
-	NAT               = "nat"
-	PROTOCOL          = "-p"
-	TABLE             = "-t"
-	DELETE            = "-D"
-	TCP               = "tcp"
-	JUMP              = "-j"
-	SOURCE            = "-s"
-	MATCH             = "-m"
-	CHECK             = "-C"
-	DESTINATION       = "-d"
-	DESTINATION_PORT  = "--dport"
-	SOURCE_PORT       = "--sport"
-	CONNECTION_STATES = "--ctstate"
-	CONNTRACK         = "conntrack"
-	TO_DESTINATION    = "--to-destination"
-)
+	c := m.Nftables.Conn
+	table := m.Nftables.Table
 
-func removeIPTableRules(network spec.Network) error {
-	for i := range network.Ports {
-		cmds := [][]string{
-			{
-				IPTABLES, TABLE, NAT, DELETE, PREROUTING,
-				PROTOCOL, TCP, DESTINATION_PORT, strconv.Itoa(network.Ports[i].HostPort),
-				JUMP, DNAT,
-				TO_DESTINATION, fmt.Sprintf("%s:%d", network.IP, network.Ports[i].ContainerPort),
-			},
-			{
-				IPTABLES, TABLE, NAT, DELETE, OUTPUT,
-				PROTOCOL, TCP, DESTINATION_PORT, strconv.Itoa(network.Ports[i].HostPort),
-				JUMP, DNAT,
-				TO_DESTINATION, fmt.Sprintf("%s:%d", network.IP, network.Ports[i].ContainerPort),
-			},
-			{
-				IPTABLES, TABLE, NAT, DELETE, POSTROUTING, SOURCE,
-				IPSUBNET, JUMP, MASQUERADE,
-			},
-			{
-				IPTABLES, DELETE, FORWARD,
-				PROTOCOL, TCP, DESTINATION, network.IP,
-				DESTINATION_PORT, strconv.Itoa(network.Ports[i].ContainerPort),
-				JUMP, ACCEPT,
-			},
-			{
-				IPTABLES, DELETE, FORWARD,
-				PROTOCOL, TCP, SOURCE, network.IP,
-				SOURCE_PORT, strconv.Itoa(network.Ports[i].ContainerPort),
-				JUMP, ACCEPT,
-			},
-			{
-				IPTABLES, DELETE, FORWARD,
-				MATCH, CONNTRACK,
-				CONNECTION_STATES, "ESTABLISHED,RELATED",
-				JUMP, ACCEPT,
-			},
-			{
-				IPTABLES, DELETE, INPUT, PROTOCOL, TCP,
-				DESTINATION_PORT, strconv.Itoa(network.Ports[i].ContainerPort),
-				JUMP, ACCEPT,
-			},
-			{
-				IPTABLES, DELETE, FORWARD,
-				DESTINATION, network.IP,
-				JUMP, DROP,
-			},
+	var rules []*nftables.Rule
+
+	if m.Nftables.Prerouting != nil {
+		prerouting, err := c.GetRules(table, m.Nftables.Prerouting)
+		if err != nil {
+			return err
 		}
-
-		for _, c := range cmds {
-			checkCmd := append([]string(nil), c...)
-			for i, v := range checkCmd {
-				if v == DELETE {
-					checkCmd[i] = CHECK
-					break
-				}
-			}
-			out, err := exec.Command(checkCmd[0], checkCmd[1:]...).CombinedOutput()
-			if err == nil {
-				out, err := exec.Command(c[0], c[1:]...).CombinedOutput()
-				if err != nil {
-					return fmt.Errorf("%v: %s", err, out)
-				}
-				continue
-			}
-			exitErr, ok := err.(*exec.ExitError)
-			if !ok {
-				return err
-			}
-			if exitErr.ExitCode() == 1 {
-				continue
-			}
-			return fmt.Errorf("%v: %s", err, out)
-		}
+		rules = append(rules, prerouting...)
 	}
 
+	if m.Nftables.Output != nil {
+		output, err := c.GetRules(table, m.Nftables.Output)
+		if err != nil {
+			return err
+		}
+		rules = append(rules, output...)
+	}
+
+	if m.Nftables.Forward != nil {
+		forward, err := c.GetRules(table, m.Nftables.Forward)
+		if err != nil {
+			return err
+		}
+		rules = append(rules, forward...)
+	}
+
+	if len(rules) == 0 {
+		return nil
+	}
+
+	for i := range network.Ports {
+		hostPort := network.Ports[i].HostPort
+		containerPort := network.Ports[i].ContainerPort
+		ruleID := fmt.Sprintf("ctrz:%s:%d:%d", network.IP, hostPort, containerPort)
+
+		for _, rule := range rules {
+			if string(rule.UserData) == ruleID {
+				if err := c.DelRule(rule); err != nil {
+					slog.Error("deleting rule", "ruleID", ruleID, "from chain", "chainName", rule.Chain.Name, ":", "error", err)
+				}
+			}
+		}
+	}
+	if err := c.Flush(); err != nil {
+		return fmt.Errorf("Error flushing delete rules: %v\n", err)
+	}
 	return nil
 }

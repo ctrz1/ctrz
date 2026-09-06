@@ -8,6 +8,7 @@ import (
 
 	"ctrz/runtime"
 	"ctrz/spec"
+	"ctrz/utils"
 
 	"github.com/spf13/cobra"
 )
@@ -17,6 +18,7 @@ var rmCmd = &cobra.Command{
 	Short: "Remove a container and all of its data (including stats)",
 
 	Run: func(cmd *cobra.Command, args []string) {
+		utils.EnsureRoot()
 		name, err := cmd.Flags().GetString("name")
 		if err != nil {
 			log.Fatalf("unable to retrieve name: %v\n", err)

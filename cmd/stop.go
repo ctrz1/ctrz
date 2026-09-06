@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"ctrz/runtime"
+	"ctrz/utils"
 	"log"
 	"syscall"
 
@@ -13,6 +14,7 @@ var stopCmd = &cobra.Command{
 	Short: "Stop Container",
 	Args:  cobra.ExactArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
+		utils.EnsureRoot()
 		containerName := args[0]
 		pid, err := runtime.GetPIDFromName(containerName)
 		if err != nil {
