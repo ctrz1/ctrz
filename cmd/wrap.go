@@ -9,6 +9,8 @@ import (
 
 	"ctrz/cgroup"
 	"ctrz/proc"
+	"ctrz/utils"
+
 	"github.com/spf13/cobra"
 )
 
@@ -16,6 +18,7 @@ var wrapCmd = &cobra.Command{
 	Use:   "wrap",
 	Short: "'wrap' a process in a new cgroup",
 	Run: func(cmd *cobra.Command, args []string) {
+		utils.EnsureRoot()
 		pid, err := cmd.Flags().GetInt("pid")
 		if err != nil {
 			log.Fatalf("Unable to retrieve pid: %v", pid)

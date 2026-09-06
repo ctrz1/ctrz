@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"ctrz/runtime"
+	"ctrz/utils"
 	"log"
 	"os"
 	"os/exec"
@@ -16,6 +17,7 @@ var enterCmd = &cobra.Command{
 	Use:   "enter <container name> [OPTIONS]",
 	Short: "Enter into an interactive shell within a container",
 	Run: func(cmd *cobra.Command, args []string) {
+		utils.EnsureRoot()
 		command, err := cmd.Flags().GetString("command")
 		if err != nil {
 			log.Fatal(err)

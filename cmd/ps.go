@@ -9,6 +9,7 @@ import (
 
 	"ctrz/proc"
 	"ctrz/runtime"
+	"ctrz/utils"
 
 	"github.com/spf13/cobra"
 )
@@ -18,6 +19,7 @@ var psCmd = &cobra.Command{
 	Short: "Print list of (running) containers",
 	Args:  cobra.ExactArgs(0),
 	Run: func(cmd *cobra.Command, args []string) {
+		utils.EnsureRoot()
 		containers, err := runtime.RetrieveAllContainers()
 		if err != nil {
 			log.Fatalf("Error retrieving containers: %v\n", err)

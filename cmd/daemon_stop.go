@@ -19,6 +19,7 @@ var daemonStopCmd = &cobra.Command{
 	Short: "Stop ctrz daemon process",
 	Args:  cobra.ExactArgs(0),
 	Run: func(cmd *cobra.Command, args []string) {
+		utils.EnsureRoot()
 		dir, err := utils.CtrzStateDir()
 		path := filepath.Join(dir, "daemon")
 
