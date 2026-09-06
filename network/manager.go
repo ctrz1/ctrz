@@ -60,9 +60,6 @@ func (m Manager) SetUp(pid int, ip string, ports []string) (spec.Network, error)
 	if err := syscall.Kill(pid, syscall.SIGCONT); err != nil {
 		return spec.Network{}, err
 	}
-	if err := DenyAllElse(ip); err != nil {
-		return spec.Network{}, err
-	}
 	var hostPorts []int
 	var containerPorts []int
 	for _, p := range ports {
@@ -101,9 +98,6 @@ func (m *Manager) Cleanup(network spec.Network) error {
 		return err
 	}
 	if err := m.getChains(); err != nil {
-		return err
-	}
-	if err := removeIPTableRules(network); err != nil {
 		return err
 	}
 	if err := m.removeContainerNetworking(network); err != nil {

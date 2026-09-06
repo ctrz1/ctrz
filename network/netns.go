@@ -18,12 +18,6 @@ import (
 	"github.com/vishvananda/netlink"
 )
 
-/**
-*	Here bridges, subnets, and container veths should not be hardcoded, but taken from the manager
-*	It is acceptable for now though and should be addressed once these exec.Command(...) calls are
-* 	replaced with netlink
-**/
-
 func (m Manager) SetupHostNetworking() error {
 	if out, err := exec.Command(
 		"sysctl",
@@ -137,25 +131,6 @@ func parsePorts(ports string) (spec.PortMapping, error) {
 		return spec.PortMapping{}, fmt.Errorf("invalid port mapping: %s", ports)
 	}
 	return spec.PortMapping{HostPort: hp, ContainerPort: cp}, nil
-}
-
-func DenyAllElse(containerIP string) error {
-	cmds := [][]string{
-		{
-			"iptables", "-A", "FORWARD",
-			"-d", containerIP,
-			"-j", "DROP",
-		},
-	}
-
-	for _, c := range cmds {
-		out, err := exec.Command(c[0], c[1:]...).CombinedOutput()
-		if err != nil {
-			return fmt.Errorf("%v: %s", err, out)
-		}
-	}
-
-	return nil
 }
 
 func ensureBridge(name, gateway string) (netlink.Link, error) {
