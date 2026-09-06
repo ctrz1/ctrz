@@ -154,7 +154,7 @@ func (m Manager) removeContainerNetworking(network spec.Network) error {
 		for _, rule := range rules {
 			if string(rule.UserData) == ruleID {
 				if err := c.DelRule(rule); err != nil {
-					slog.Error("deleting rule", "ruleID", ruleID, "from chain", "chainName", rule.Chain.Name,":", "error", err)
+					slog.Error("deleting rule", "ruleID", ruleID, "from chain", "chainName", rule.Chain.Name, ":", "error", err)
 				}
 			}
 		}

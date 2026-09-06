@@ -191,22 +191,31 @@ func ensureBridge(name, gateway string) (netlink.Link, error) {
 }
 
 func (m Manager) nat() error {
-
-	//TODO: make sure to only create these rules once and not over and over again with every container 
-	//e.g.:
-	/*
-	outboundRuleId := fmt.Sprintf("ctrz:nat:%s", m.Subnet)
-	inboundRuleId := "ctrz:nat:127.0.0.0/8"
-	rules, err := c.GetRules(table, m.Nftables.Postruting)
-	for _, rule := range rules {
-		...
-	}
-	*/
-
-	
-
 	c := m.Nftables.Conn
 	table := m.Nftables.Table
+
+	outboundRuleId := fmt.Sprintf("ctrz:nat:%s", m.Subnet)
+	createOutbound := true
+	inboundRuleId := "ctrz:nat:127.0.0.0/8"
+	createInbound := true
+
+	rules, err := c.GetRules(table, m.Nftables.Postruting)
+	if err != nil {
+		// TODO: think if this should really return an error. Worst case the same rule is created multiple times?
+		return fmt.Errorf("Error determining if rules exist: %v\n", err)
+	}
+	for _, rule := range rules {
+		if string(rule.UserData) == outboundRuleId {
+			createOutbound = false
+		}
+		if string(rule.UserData) == inboundRuleId {
+			createInbound = false
+		}
+	}
+
+	if !(createOutbound || createInbound) {
+		return nil
+	}
 
 	_, subnet, err := net.ParseCIDR(m.Subnet)
 	if err != nil {
@@ -225,8 +234,9 @@ func (m Manager) nat() error {
 
 	// iptables -t nat -A POSTROUTING -s 10.200.1.0/24 -j MASQUERADE
 	outbound := &nftables.Rule{
-		Table: table,
-		Chain: m.Nftables.Postruting,
+		Table:    table,
+		Chain:    m.Nftables.Postruting,
+		UserData: []byte(outboundRuleId),
 		Exprs: []expr.Any{
 			&expr.Payload{
 				DestRegister: reg1,
@@ -245,8 +255,9 @@ func (m Manager) nat() error {
 
 	// iptables -t nat -A POSTROUTING -s 127.0.0.0/8 -d 10.200.1.0/24 -j MASQUERADE
 	inbound := &nftables.Rule{
-		Table: table,
-		Chain: m.Nftables.Postruting,
+		Table:    table,
+		Chain:    m.Nftables.Postruting,
+		UserData: []byte(inboundRuleId),
 		Exprs: []expr.Any{
 			&expr.Payload{
 				DestRegister: reg1,
@@ -274,8 +285,12 @@ func (m Manager) nat() error {
 		},
 	}
 
-	c.AddRule(outbound)
-	c.AddRule(inbound)
+	if createOutbound {
+		c.AddRule(outbound)
+	}
+	if createInbound {
+		c.AddRule(inbound)
+	}
 
 	return c.Flush()
 }
@@ -283,12 +298,25 @@ func (m Manager) nat() error {
 func (m Manager) outboundForward() error {
 	c := m.Nftables.Conn
 	table := m.Nftables.Table
+	ruleId := fmt.Sprintf("ctrz:forward:%s", m.Bridge)
+
+	rules, err := c.GetRules(table, m.Nftables.Forward)
+	if err != nil {
+		return fmt.Errorf("Error determining if rule exists: %v\n", err)
+	}
+
+	for _, rule := range rules {
+		if string(rule.UserData) == ruleId {
+			return nil
+		}
+	}
 
 	// iptables -A FORWARD -i ctrz-br0 -j ACCEPT
 	// add rule ip ctrz forward iifname "ctrz-br0" accept
 	c.AddRule(&nftables.Rule{
-		Table: table,
-		Chain: m.Nftables.Forward,
+		Table:    table,
+		Chain:    m.Nftables.Forward,
+		UserData: []byte(ruleId),
 		Exprs: []expr.Any{
 			&expr.Meta{
 				Key:      expr.MetaKeyIIFNAME,
@@ -323,10 +351,23 @@ func (m Manager) allowReturnTraffic() error {
 	*/
 	c := m.Nftables.Conn
 	table := m.Nftables.Table
+	ruleId := fmt.Sprintf("ctrz:return:%s", m.Bridge)
+
+	rules, err := c.GetRules(table, m.Nftables.Forward)
+	if err != nil {
+		return fmt.Errorf("Error determining if rule exists: %v\n", err)
+	}
+
+	for _, rule := range rules {
+		if string(rule.UserData) == ruleId {
+			return nil
+		}
+	}
 
 	c.AddRule(&nftables.Rule{
-		Table: table,
-		Chain: m.Nftables.Forward,
+		Table:    table,
+		Chain:    m.Nftables.Forward,
+		UserData: []byte(ruleId),
 		Exprs: []expr.Any{
 			&expr.Meta{
 				Key:      expr.MetaKeyOIFNAME,
