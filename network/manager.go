@@ -75,6 +75,10 @@ func (m Manager) SetUp(pid int, ip string, ports []string) (spec.Network, error)
 		containerPorts = append(containerPorts, containerPort)
 	}
 
+	if err := m.denyAllElse(ip); err != nil {
+		return spec.Network{}, fmt.Errorf("Error isolating container IP: %v\n", err)
+	}
+
 	networkSpec := spec.Network{
 		IP: ip,
 	}

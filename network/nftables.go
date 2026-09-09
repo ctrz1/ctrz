@@ -50,6 +50,14 @@ func (m *Manager) addNftChains() error {
 		Priority: nftables.ChainPriorityNATDest,
 	})
 
+	m.Nftables.OutputFilter = c.AddChain(&nftables.Chain{
+		Table:    table,
+		Name:     "output_filter",
+		Type:     nftables.ChainTypeFilter,
+		Hooknum:  nftables.ChainHookOutput,
+		Priority: nftables.ChainPriorityFilter,
+	})
+
 	m.Nftables.Forward = c.AddChain(&nftables.Chain{
 		Table:    table,
 		Name:     "forward",
@@ -86,6 +94,8 @@ func (m *Manager) getChains() error {
 			m.Nftables.Prerouting = chain
 		case "output":
 			m.Nftables.Output = chain
+		case "output_filter":
+			m.Nftables.OutputFilter = chain
 		case "forward":
 			m.Nftables.Forward = chain
 		default:

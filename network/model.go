@@ -42,10 +42,11 @@ type VethPair struct {
 }
 
 type nft struct {
-	Conn       *nftables.Conn
-	Table      *nftables.Table
-	Prerouting *nftables.Chain
-	Output     *nftables.Chain
-	Forward    *nftables.Chain
-	Postruting *nftables.Chain
+	Conn         *nftables.Conn
+	Table        *nftables.Table
+	Prerouting   *nftables.Chain
+	Output       *nftables.Chain
+	OutputFilter *nftables.Chain
+	Forward      *nftables.Chain
+	Postruting   *nftables.Chain
 }

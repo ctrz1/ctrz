@@ -148,7 +148,7 @@ func (m Manager) exposePort(ports, containerIP string) (int, int, error) {
 
 	c.AddRule(&nftables.Rule{
 		Table:    table,
-		Chain:    m.Nftables.Forward,
+		Chain:    m.Nftables.OutputFilter,
 		UserData: []byte(ruleID),
 		Exprs: []expr.Any{
 			&expr.Meta{
@@ -198,4 +198,41 @@ func (m Manager) exposePort(ports, containerIP string) (int, int, error) {
 	}
 
 	return pm.HostPort, pm.ContainerPort, nil
+}
+
+func (m Manager) denyAllElse(containerIP string) error {
+	ip := net.ParseIP(containerIP).To4()
+	if ip == nil {
+		return fmt.Errorf("invalid container IP: %s\n", containerIP)
+	}
+
+	ruleID := fmt.Sprintf("ctrz:%s:drop", containerIP)
+
+	c := m.Nftables.Conn
+	table := m.Nftables.Table
+
+	c.AddRule(&nftables.Rule{
+		Table: table,
+		Chain: m.Nftables.OutputFilter,
+		UserData: []byte(ruleID),
+		Exprs: []expr.Any{
+			// ip daddr containerIP
+			&expr.Payload{
+				DestRegister: reg1,
+				Base:         expr.PayloadBaseNetworkHeader,
+				Offset:       16,
+				Len:          4,
+			},
+			&expr.Cmp{
+				Op:       expr.CmpOpEq,
+				Register: reg1,
+				Data:     ip,
+			},
+			&expr.Verdict{
+				Kind: expr.VerdictDrop,
+			},
+		},
+	})
+
+	return c.Flush()
 }
