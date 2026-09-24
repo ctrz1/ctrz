@@ -15,11 +15,14 @@ type CLIOptions struct {
 	Ports   *[]string `json:"ports"`
 }
 
-func Get(cont *CLIOptions, confPath string) (spec.ContainerSpec, error) {
-
-	c, err := load(confPath)
-	if err != nil && confPath != defaultConfPath {
-		slog.Warn(fmt.Sprintf("Unable to load config at '%s': %v", confPath, err))
+func Get(cont *CLIOptions, confPath string, skipConfig bool) (spec.ContainerSpec, error) {
+	var c *spec.ContainerSpec
+	var err error
+	if !skipConfig {
+		c, err = load(confPath)
+		if err != nil && confPath != defaultConfPath {
+			slog.Warn(fmt.Sprintf("Unable to load config at '%s': %v", confPath, err))
+		}
 	}
 
 	return merge(cont, c), nil

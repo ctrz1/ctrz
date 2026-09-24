@@ -69,25 +69,8 @@ func ctrzInit() {
 	}
 
 	// 7. hostname (UTS namespace)
-	if err := syscall.Sethostname([]byte("ctrz")); err != nil {
+	if err := syscall.Sethostname([]byte(filepath.Base(cmd))); err != nil {
 		log.Fatalf("Error setting new hostname: %v\n", err)
-	}
-
-	if err := os.MkdirAll("/dev", 0o755); err != nil {
-		log.Fatalf("Error creating /dev directory: %v\n", err)
-	}
-
-	if err := syscall.Mknod("/dev/null", syscall.S_IFCHR|0o666, int(unix.Mkdev(1, 3))); err != nil {
-		fmt.Printf("Error creating /dev/null: %v\n", err)
-	}
-	if err := syscall.Mknod("/dev/zero", syscall.S_IFCHR|0o666, int(unix.Mkdev(1, 5))); err != nil {
-		fmt.Printf("Error creating /dev/zero: %v\n", err)
-	}
-	if err := syscall.Mknod("/dev/random", syscall.S_IFCHR|0o666, int(unix.Mkdev(1, 8))); err != nil {
-		fmt.Printf("Error creating /dev/random: %v\n", err)
-	}
-	if err := syscall.Mknod("/dev/urandom", syscall.S_IFCHR|0o666, int(unix.Mkdev(1, 9))); err != nil {
-		fmt.Printf("Error creating /dev/urandom: %v\n", err)
 	}
 
 	if err := os.MkdirAll("/proc", 0o555); err != nil {
@@ -97,6 +80,10 @@ func ctrzInit() {
 	// 8. mount pseudo filesystems
 	if err := syscall.Mount("proc", "/proc", "proc", 0, ""); err != nil {
 		log.Fatalf("Error mounting pseudo filesystem: %v\n", err)
+	}
+
+	if err := mountDev(); err != nil {
+		fmt.Print(err)
 	}
 
 	manager, err := network.New("10.200.1.0/24", "ctrz-br0", "ctrz0")
@@ -117,4 +104,26 @@ func ctrzInit() {
 	if err != nil {
 		log.Fatal("exec failed: ", err)
 	}
+}
+
+func mountDev() error {
+	if err := os.MkdirAll("/dev", 0o755); err != nil {
+		log.Fatalf("Error creating /dev directory: %v\n", err)
+	}
+
+	if err := syscall.Mknod("/dev/null", syscall.S_IFCHR|0o666, int(unix.Mkdev(1, 3))); err != nil {
+		return fmt.Errorf("Error creating /dev/null: %v\n", err)
+	}
+	if err := syscall.Mknod("/dev/zero", syscall.S_IFCHR|0o666, int(unix.Mkdev(1, 5))); err != nil {
+		return fmt.Errorf("Error creating /dev/zero: %v\n", err)
+	}
+	if err := syscall.Mknod("/dev/random", syscall.S_IFCHR|0o666, int(unix.Mkdev(1, 8))); err != nil {
+		return fmt.Errorf("Error creating /dev/random: %v\n", err)
+	}
+	if err := syscall.Mknod("/dev/urandom", syscall.S_IFCHR|0o666, int(unix.Mkdev(1, 9))); err != nil {
+		return fmt.Errorf("Error creating /dev/urandom: %v\n", err)
+	}
+
+	// link stdin, stdout, stderr here
+	return nil
 }

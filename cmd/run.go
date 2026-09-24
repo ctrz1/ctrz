@@ -20,8 +20,12 @@ var runCmd = &cobra.Command{
 	Run: func(cmd *cobra.Command, args []string) {
 		utils.EnsureRoot()
 		conf, confPath := getFlags(cmd)
+		skipConf, err := cmd.Flags().GetBool("no-config")
+		if err != nil {
+			log.Fatal(err)
+		}
 		conf.Command = &args
-		container, err := config.Get(&conf, confPath)
+		container, err := config.Get(&conf, confPath, skipConf)
 		if err != nil {
 			log.Fatal(err)
 		}
@@ -44,8 +48,10 @@ func init() {
 	runCmd.Flags().String("name", "", "name of new container")
 	runCmd.Flags().StringArrayP("port", "p", []string{}, "Map host port to container port with '<host-port>:<container-port>'")
 	runCmd.Flags().Bool("rm", false, "Container automatically cleans up after finishing")
-	runCmd.Flags().String("config", "ctrz.yaml", "Path to container config")
+	runCmd.Flags().StringP("config", "f", "ctrz.yaml", "Path to container config")
+	runCmd.Flags().Bool("no-config", false, "Ignore the 'ctrz.yaml' file in the current directory")
 	runCmd.MarkFlagsRequiredTogether("runtime", "period")
+	runCmd.MarkFlagsMutuallyExclusive("config", "no-config")
 	runCmd.MarkFlagsMutuallyExclusive("cpu", "runtime")
 }
 
