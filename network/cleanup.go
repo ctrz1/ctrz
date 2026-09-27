@@ -82,12 +82,18 @@ func (m *Manager) removePorts(network spec.Network, rules []*nftables.Rule) {
 
 func (m *Manager) removeBlocker(network spec.Network, rules []*nftables.Rule) {
 	c := m.Nftables.Conn
-	ruleID := fmt.Sprintf("ctrz:%s:drop", network.IP)
+	dropRuleID := fmt.Sprintf("ctrz:%s:drop", network.IP)
+	conntrackRuleID := fmt.Sprintf("ctrz:%s:conntrack", network.IP)
 
 	for _, rule := range rules {
-		if string(rule.UserData) == ruleID {
+		if string(rule.UserData) == dropRuleID {
 			if err := c.DelRule(rule); err != nil {
-				slog.Error("deleting rule", "ruleID", ruleID, "from chain", "chainName", rule.Chain.Name, ":", "error", err)
+				slog.Error("deleting rule", "ruleID", dropRuleID, "from chain", "chainName", rule.Chain.Name, ":", "error", err)
+			}
+		}
+		if string(rule.UserData) == conntrackRuleID {
+			if err := c.DelRule(rule); err != nil {
+				slog.Error("deleting rule", "ruleID", conntrackRuleID, "from chain", "chainName", rule.Chain.Name, ":", "error", err)
 			}
 		}
 	}

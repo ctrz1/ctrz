@@ -206,15 +206,54 @@ func (m Manager) denyAllElse(containerIP string) error {
 		return fmt.Errorf("invalid container IP: %s\n", containerIP)
 	}
 
-	ruleID := fmt.Sprintf("ctrz:%s:drop", containerIP)
+	dropRuleID := fmt.Sprintf("ctrz:%s:drop", containerIP)
+	conntrackRuleID := fmt.Sprintf("ctrz:%s:conntrack", containerIP)
 
 	c := m.Nftables.Conn
 	table := m.Nftables.Table
 
 	c.AddRule(&nftables.Rule{
-		Table: table,
-		Chain: m.Nftables.OutputFilter,
-		UserData: []byte(ruleID),
+		Table:    table,
+		Chain:    m.Nftables.OutputFilter,
+		UserData: []byte(conntrackRuleID),
+		Exprs: []expr.Any{
+			&expr.Payload{
+				DestRegister: reg1,
+				Base:         expr.PayloadBaseNetworkHeader,
+				Offset:       16,
+				Len:          4,
+			},
+			&expr.Cmp{
+				Op:       expr.CmpOpEq,
+				Register: reg1,
+				Data:     ip,
+			},
+			&expr.Ct{
+				Register: reg1,
+				Key: expr.CtKeySTATE,
+			},
+			&expr.Bitwise{
+				SourceRegister: reg1,
+				DestRegister:   reg1,
+				Len:            4,
+				Mask:           binaryutil.NativeEndian.PutUint32(expr.CtStateBitESTABLISHED | expr.CtStateBitRELATED),
+				Xor:            []byte{0, 0, 0, 0},
+			},
+			&expr.Cmp{
+				Op:       expr.CmpOpNeq,
+				Register: reg1,
+				Data:     []byte{0, 0, 0, 0},
+			},
+			&expr.Verdict{
+				Kind: expr.VerdictAccept,
+			},
+		},
+	})
+
+	c.AddRule(&nftables.Rule{
+		Table:    table,
+		Chain:    m.Nftables.OutputFilter,
+		UserData: []byte(dropRuleID),
 		Exprs: []expr.Any{
 			// ip daddr containerIP
 			&expr.Payload{

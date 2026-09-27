@@ -361,7 +361,7 @@ func (m Manager) allowReturnTraffic() error {
 				SourceRegister: reg1,
 				DestRegister:   reg1,
 				Len:            4,
-				Mask:           binaryutil.BigEndian.PutUint32(expr.CtStateBitESTABLISHED | expr.CtStateBitRELATED),
+				Mask:           binaryutil.NativeEndian.PutUint32(expr.CtStateBitESTABLISHED | expr.CtStateBitRELATED),
 				Xor:            []byte{0, 0, 0, 0},
 			},
 			&expr.Cmp{
