@@ -21,7 +21,7 @@ curl -fsSL https://raw.githubusercontent.com/ctrz1/ctrz/main/install | sudo bash
 2) Manually download a binary from the [releases](https://github.com/ctrz1/ctrz/releases)
 3) Clone the repo and build the project yourself using `make build`.
 
-## Requirements
+## Requirements & Limitations
 
 1. To fully run and use `ctrz`, root privileges are required. Rootless containers are not supported. It is recommended to use `sudo ctrz ...` for all commands.
-2. `ctrz` is currently still using `iptables` to define networking rules. An effort to migrate to `nftables` is being made [here](https://github.com/ctrz1/ctrz/tree/nftables).
+2. `ctrz` creates its own `nftables` rules for networking. If a container is supposed to reach the internet and Docker is installed on the system, Docker's global `iptables` FORWARD chain might block traffic from `ctrz` containers because Docker sets its default `FORWARD` policy to `DROP`. A temporary fix can be to set `iptables -P FORWARD ACCEPT` (see [Docker documentation](https://docs.docker.com/engine/network/firewall-nftables/#forward-policy-in-iptables)). Note that this changes the host's global forwarding policy and may have unintended security or networking implications. A proper integration with Docker's firewall rules is planned.
