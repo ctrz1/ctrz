@@ -4,6 +4,7 @@ package runtime
 
 import (
 	"ctrz/cgroup"
+	"ctrz/fs"
 	"ctrz/logging"
 	"ctrz/network"
 	"ctrz/proc"
@@ -16,8 +17,9 @@ import (
 )
 
 type Runtime struct {
-	NetworkManager *network.Manager
-	CgroupManager  cgroup.Manager
+	NetworkManager    *network.Manager
+	CgroupManager     cgroup.Manager
+	FileSystemManager fs.Manager
 }
 
 func New() (Runtime, error) {
@@ -26,8 +28,9 @@ func New() (Runtime, error) {
 		return Runtime{}, err
 	}
 	return Runtime{
-		NetworkManager: &netManager,
-		CgroupManager:  cgroup.New(),
+		NetworkManager:    &netManager,
+		CgroupManager:     cgroup.New(),
+		FileSystemManager: fs.New(),
 	}, nil
 }
 

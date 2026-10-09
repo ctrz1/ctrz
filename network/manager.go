@@ -51,10 +51,16 @@ func (m *Manager) Initialise() (string, error) {
 }
 
 func (m Manager) SetUp(pid int, ip string, ports []string) (spec.Network, error) {
+	networkSpec := spec.Network{
+		IP: ip,
+	}
+	if len(ports) == 0 {
+		return networkSpec, nil
+	}
 	if err := m.SetupHostNetworking(); err != nil {
 		return spec.Network{}, err
 	}
-	if err := m.SetupVeth(pid); err != nil {
+	if err := m.setupVeth(pid); err != nil {
 		return spec.Network{}, err
 	}
 	if err := syscall.Kill(pid, syscall.SIGCONT); err != nil {
@@ -77,10 +83,6 @@ func (m Manager) SetUp(pid int, ip string, ports []string) (spec.Network, error)
 
 	if err := m.denyAllElse(ip); err != nil {
 		return spec.Network{}, fmt.Errorf("Error isolating container IP: %v\n", err)
-	}
-
-	networkSpec := spec.Network{
-		IP: ip,
 	}
 
 	for i, containerPort := range containerPorts {

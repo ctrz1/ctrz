@@ -19,7 +19,7 @@ func ctrzInit() {
 	containerIP := os.Args[2]
 	containerID := os.Args[3]
 	cmd := os.Args[4]
-	args := os.Args[4:]
+	args := os.Args[5:]
 
 	if err := syscall.Kill(1, syscall.SIGSTOP); err != nil {
 		log.Fatal(err)
@@ -30,7 +30,8 @@ func ctrzInit() {
 		log.Fatalf("Error mounting rootfs: %v\n", err)
 	}
 
-	if err := fs.InjectBinary(cmd, fmt.Sprintf("%s/app", rootfs)); err != nil {
+	cmdPath, err := fs.InjectBinary(cmd, fmt.Sprintf("%s/app", rootfs));
+	if err != nil {
 		log.Fatalf("Error injecting %s into namespace: %v\n", cmd, err)
 	}
 
@@ -100,7 +101,10 @@ func ctrzInit() {
 		os.Exit(1)
 	}
 
-	err = syscall.Exec("/app/bin", args, os.Environ())
+	var env []string
+	env = append(env, os.Environ()...)
+	fmt.Printf("Executing: %s %v\n", cmdPath, args)
+	err = syscall.Exec(cmdPath, args, env)
 	if err != nil {
 		log.Fatal("exec failed: ", err)
 	}

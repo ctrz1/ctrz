@@ -12,7 +12,7 @@ import (
 	"github.com/vishvananda/netns"
 )
 
-func (m Manager) SetupVeth(pid int) error {
+func (m Manager) setupVeth(pid int) error {
 	hostIf := "veth-host-" + strconv.Itoa(pid)
 	ctrzIf := m.ContainerInterface
 
