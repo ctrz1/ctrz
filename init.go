@@ -7,19 +7,27 @@ import (
 	"log"
 	"os"
 	"path/filepath"
+	"strings"
 	"syscall"
 
 	"ctrz/fs"
 	"ctrz/network"
+	"ctrz/utils"
 
 	"golang.org/x/sys/unix"
 )
 
 func ctrzInit() {
-	containerIP := os.Args[2]
-	containerID := os.Args[3]
-	cmd := os.Args[4]
-	args := os.Args[5:]
+	fmt.Println("Try to listen to socket")
+	cont, err := utils.ListenToSocket()
+	if err != nil {
+		log.Fatalf("Error listening to socket: %v\n", err)
+	}
+
+	containerIP := cont.IP
+	containerID := cont.ID
+	cmd := os.Args[2]
+	args := os.Args[3:]
 
 	if err := syscall.Kill(1, syscall.SIGSTOP); err != nil {
 		log.Fatal(err)
@@ -101,10 +109,12 @@ func ctrzInit() {
 		os.Exit(1)
 	}
 
-	var env []string
-	env = append(env, os.Environ()...)
 	fmt.Printf("Executing: %s %v\n", cmdPath, args)
-	err = syscall.Exec(cmdPath, args, env)
+	for _, e := range cont.Env {
+		os.Setenv(strings.Split(e, "=")[0], strings.Split(e, "=")[1])
+	}
+	fmt.Printf("Using env: %v\n", os.Environ())
+	err = syscall.Exec(cmdPath, args, os.Environ())
 	if err != nil {
 		log.Fatal("exec failed: ", err)
 	}

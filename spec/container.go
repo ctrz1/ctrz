@@ -27,3 +27,9 @@ type Removal struct {
 	All      bool
 	Inactive bool
 }
+
+type ContainerSocket struct {
+	IP  string
+	ID  string
+	Env []string
+}

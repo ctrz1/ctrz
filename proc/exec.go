@@ -10,9 +10,7 @@ import (
 )
 
 func Prepare(name, ip string, command []string) *exec.Cmd {
-	args := append([]string{name}, command...)
-	args = append([]string{ip}, args...)
-	args = append([]string{"__ctrz_init"}, args...)
+	args := append([]string{"__ctrz_init"}, command...)
 
 	process := exec.Command("/proc/self/exe", args...)
 
