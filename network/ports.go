@@ -230,7 +230,7 @@ func (m Manager) denyAllElse(containerIP string) error {
 			},
 			&expr.Ct{
 				Register: reg1,
-				Key: expr.CtKeySTATE,
+				Key:      expr.CtKeySTATE,
 			},
 			&expr.Bitwise{
 				SourceRegister: reg1,
