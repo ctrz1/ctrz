@@ -81,6 +81,7 @@ func (r Runtime) Run(cont *spec.ContainerSpec) error {
 		Env: []string{
 			"TEST=WORKS",
 		},
+		ExposePorts: len(networkSpec.Ports) > 0,
 	}); err != nil {
 		fmt.Printf("Error writing to socket: %v\n", err)
 	}

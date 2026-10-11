@@ -41,7 +41,6 @@ func ListenToSocket() (spec.ContainerSocket, error) {
 	if err := json.Unmarshal(data, &cont); err != nil {
 		return cont, err
 	}
-	fmt.Printf("Received data:\n\n%+v\n", cont)
 	return cont, nil
 }
 
@@ -67,12 +66,3 @@ func WriteToSocket(cont spec.ContainerSocket) error {
 	}
 	return nil
 }
-
-// func ensureSocket() error {
-// 	baseDir, err := CtrzStateDir()
-// 	if err != nil {
-// 		return err
-// 	}
-
-// 	return nil
-// }

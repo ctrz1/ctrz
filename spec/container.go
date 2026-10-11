@@ -29,7 +29,8 @@ type Removal struct {
 }
 
 type ContainerSocket struct {
-	IP  string
-	ID  string
-	Env []string
+	IP          string
+	ID          string
+	Env         []string
+	ExposePorts bool
 }

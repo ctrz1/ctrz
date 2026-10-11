@@ -62,7 +62,7 @@ func (m Manager) SetupHostNetworking() error {
 	return nil
 }
 
-func (m Manager) SetupNetns(containerIP string) error {
+func (m Manager) SetupNetns(containerIP string, exposePorts bool) error {
 	lo, err := netlink.LinkByName("lo")
 	if err != nil {
 		return fmt.Errorf("Error finding loopback: %v\n", err)
@@ -70,6 +70,10 @@ func (m Manager) SetupNetns(containerIP string) error {
 
 	if err := netlink.LinkSetUp(lo); err != nil {
 		return fmt.Errorf("Error bringing loopback up: %v\n", err)
+	}
+
+	if !exposePorts {
+		return nil
 	}
 
 	link, err := netlink.LinkByName(m.ContainerInterface)
