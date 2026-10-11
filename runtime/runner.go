@@ -76,11 +76,9 @@ func (r Runtime) Run(cont *spec.ContainerSpec) error {
 	}
 
 	if err := utils.WriteToSocket(spec.ContainerSocket{
-		IP: containerIP,
-		ID: cont.Name,
-		Env: []string{
-			"TEST=WORKS",
-		},
+		IP:          containerIP,
+		ID:          cont.Name,
+		Env:         cont.Environment,
 		ExposePorts: len(networkSpec.Ports) > 0,
 	}); err != nil {
 		fmt.Printf("Error writing to socket: %v\n", err)

@@ -50,6 +50,7 @@ func init() {
 	runCmd.Flags().Bool("rm", false, "Container automatically cleans up after finishing")
 	runCmd.Flags().StringP("config", "f", "ctrz.yaml", "Path to container config")
 	runCmd.Flags().Bool("no-config", false, "Ignore the 'ctrz.yaml' file in the current directory")
+	runCmd.Flags().StringArrayP("env", "e", []string{}, "Pass custom environment variables in the from KEY=VALUE")
 	runCmd.MarkFlagsRequiredTogether("runtime", "period")
 	runCmd.MarkFlagsMutuallyExclusive("config", "no-config")
 	runCmd.MarkFlagsMutuallyExclusive("cpu", "runtime")
@@ -92,6 +93,14 @@ func getFlags(cmd *cobra.Command) (config.CLIOptions, string) {
 	conf, err := cmd.Flags().GetString("config")
 	if err != nil {
 		log.Fatal("error retrieving --config:", err)
+	}
+
+	env, err := cmd.Flags().GetStringArray("env")
+	if err != nil {
+		log.Fatal("error retrieving --env (-e):", err)
+	}
+	if cmd.Flags().Changed("env") {
+		c.Environment = &env
 	}
 
 	period, err := cmd.Flags().GetInt("period")
