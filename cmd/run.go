@@ -78,7 +78,7 @@ func getFlags(cmd *cobra.Command) (config.CLIOptions, string) {
 	if err != nil {
 		log.Fatal("error retrieving --rm:", err)
 	}
-	if cmd.Flags().Changed("remove") {
+	if cmd.Flags().Changed("rm") {
 		c.Remove = &remove
 	}
 

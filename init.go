@@ -26,7 +26,7 @@ func ctrzInit() {
 	containerIP := cont.IP
 	containerID := cont.ID
 	cmd := os.Args[2]
-	args := os.Args[3:]
+	args := os.Args[2:]
 
 	if err := syscall.Kill(1, syscall.SIGSTOP); err != nil {
 		log.Fatal(err)
