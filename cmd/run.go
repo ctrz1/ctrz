@@ -9,6 +9,7 @@ import (
 
 	"ctrz/config"
 	"ctrz/runtime"
+	"ctrz/spec"
 	"ctrz/utils"
 
 	"github.com/spf13/cobra"
@@ -34,6 +35,14 @@ var runCmd = &cobra.Command{
 			log.Fatal(err)
 		}
 		if err := r.Run(&container); err != nil {
+			if rmErr := r.Remove(&spec.Removal{
+				Name:     container.Name,
+				All:      false,
+				Inactive: false,
+				Force:    false,
+			}); rmErr != nil {
+				log.Fatalf("Run failed: %v\n\nRun could not be cleaned up: %v", err, rmErr)
+			}
 			log.Fatal(err)
 		}
 	},

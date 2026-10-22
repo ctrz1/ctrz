@@ -120,9 +120,18 @@ func (r Runtime) Remove(rm *spec.Removal) error {
 	var containers []string
 
 	if rm.Inactive || rm.All {
-		containers, err = RetrieveAllContainers()
+		all, err := RetrieveAllContainers()
 		if err != nil {
 			return fmt.Errorf("Could not retrieve list of containers: %v\n", err)
+		}
+		for _, c := range all {
+			cont, err := GetContainerDataFromName(c)
+			if err != nil {
+				continue
+			}
+			if !proc.IsProcActive(cont.PID, cont.StartTime) || rm.All {
+				containers = append(containers, c)
+			}
 		}
 	} else {
 		containers = append(containers, rm.Name)
