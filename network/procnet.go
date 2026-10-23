@@ -30,13 +30,13 @@ func ParseProcNet(proto string, pid int) (map[uint64]NetSocket, error) {
 			inode = 0
 		}
 
-		remoteAddr, err := ParseProcNetAddr(fields[1], ipV6)
+		remoteAddr, err := ParseProcNetAddr(fields[2], ipV6)
 		if err != nil {
-			remoteAddr = fields[1]
+			remoteAddr = fields[2]
 		}
-		localAddr, err := ParseProcNetAddr(fields[2], ipV6)
+		localAddr, err := ParseProcNetAddr(fields[1], ipV6)
 		if err != nil {
-			localAddr = fields[2]
+			localAddr = fields[1]
 		}
 
 		iface, err := ParseProcPIDDev(pid)

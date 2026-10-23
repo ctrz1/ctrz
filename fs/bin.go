@@ -9,34 +9,37 @@ import (
 	"strings"
 )
 
-func InjectBinary(src, dest string) (err error) {
+func InjectBinary(src, dest string) (path string, err error) {
+	if getUtils()[src] {
+		return fmt.Sprintf("/bin/%s", src), nil
+	}
 	zip := filepath.Base(src)
 	_, isZip := strings.CutSuffix(zip, ".tar.gz")
 	if isZip {
 		data, err := os.ReadFile(src)
 		if err != nil {
-			return fmt.Errorf("Error reading zip archive: %v", err)
+			return "", fmt.Errorf("Error reading zip archive: %v", err)
 		}
 		if err := extractTarGz(data, dest); err != nil {
-			return err
+			return "", err
 		}
-		return nil
+		return "", nil
 	}
 	in, err := os.Open(src)
 	if err != nil {
-		return err
+		return "", err
 	}
 	defer func() {
 		err = errors.Join(err, in.Close())
 	}()
 
 	if err := os.MkdirAll(dest, 0o755); err != nil {
-		return err
+		return "", err
 	}
 
 	info, err := in.Stat()
 	if err != nil {
-		return err
+		return "", err
 	}
 
 	out, err := os.OpenFile(
@@ -45,15 +48,15 @@ func InjectBinary(src, dest string) (err error) {
 		info.Mode(),
 	)
 	if err != nil {
-		return err
+		return "", err
 	}
 	defer func() {
 		err = errors.Join(err, out.Close())
 	}()
 
 	if _, err := io.Copy(out, in); err != nil {
-		return err
+		return "", err
 	}
 
-	return out.Sync()
+	return "/app/bin", out.Sync()
 }

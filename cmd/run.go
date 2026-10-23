@@ -9,6 +9,8 @@ import (
 
 	"ctrz/config"
 	"ctrz/runtime"
+	"ctrz/spec"
+	"ctrz/utils"
 
 	"github.com/spf13/cobra"
 )
@@ -17,9 +19,14 @@ var runCmd = &cobra.Command{
 	Use:   "run",
 	Short: "Run a new process in an isolated container",
 	Run: func(cmd *cobra.Command, args []string) {
+		utils.EnsureRoot()
 		conf, confPath := getFlags(cmd)
+		skipConf, err := cmd.Flags().GetBool("no-config")
+		if err != nil {
+			log.Fatal(err)
+		}
 		conf.Command = &args
-		container, err := config.Get(&conf, confPath)
+		container, err := config.Get(&conf, confPath, skipConf)
 		if err != nil {
 			log.Fatal(err)
 		}
@@ -28,6 +35,14 @@ var runCmd = &cobra.Command{
 			log.Fatal(err)
 		}
 		if err := r.Run(&container); err != nil {
+			if rmErr := r.Remove(&spec.Removal{
+				Name:     container.Name,
+				All:      false,
+				Inactive: false,
+				Force:    false,
+			}); rmErr != nil {
+				log.Fatalf("Run failed: %v\n\nRun could not be cleaned up: %v", err, rmErr)
+			}
 			log.Fatal(err)
 		}
 	},
@@ -42,8 +57,11 @@ func init() {
 	runCmd.Flags().String("name", "", "name of new container")
 	runCmd.Flags().StringArrayP("port", "p", []string{}, "Map host port to container port with '<host-port>:<container-port>'")
 	runCmd.Flags().Bool("rm", false, "Container automatically cleans up after finishing")
-	runCmd.Flags().String("config", "ctrz.yaml", "Path to container config")
+	runCmd.Flags().StringP("config", "f", "ctrz.yaml", "Path to container config")
+	runCmd.Flags().Bool("no-config", false, "Ignore the 'ctrz.yaml' file in the current directory")
+	runCmd.Flags().StringArrayP("env", "e", []string{}, "Pass custom environment variables in the from KEY=VALUE")
 	runCmd.MarkFlagsRequiredTogether("runtime", "period")
+	runCmd.MarkFlagsMutuallyExclusive("config", "no-config")
 	runCmd.MarkFlagsMutuallyExclusive("cpu", "runtime")
 }
 
@@ -69,7 +87,7 @@ func getFlags(cmd *cobra.Command) (config.CLIOptions, string) {
 	if err != nil {
 		log.Fatal("error retrieving --rm:", err)
 	}
-	if cmd.Flags().Changed("remove") {
+	if cmd.Flags().Changed("rm") {
 		c.Remove = &remove
 	}
 
@@ -84,6 +102,14 @@ func getFlags(cmd *cobra.Command) (config.CLIOptions, string) {
 	conf, err := cmd.Flags().GetString("config")
 	if err != nil {
 		log.Fatal("error retrieving --config:", err)
+	}
+
+	env, err := cmd.Flags().GetStringArray("env")
+	if err != nil {
+		log.Fatal("error retrieving --env (-e):", err)
+	}
+	if cmd.Flags().Changed("env") {
+		c.Environment = &env
 	}
 
 	period, err := cmd.Flags().GetInt("period")

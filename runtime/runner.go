@@ -4,6 +4,7 @@ package runtime
 
 import (
 	"ctrz/cgroup"
+	"ctrz/fs"
 	"ctrz/logging"
 	"ctrz/network"
 	"ctrz/proc"
@@ -16,8 +17,9 @@ import (
 )
 
 type Runtime struct {
-	NetworkManager network.Manager
-	CgroupManager  cgroup.Manager
+	NetworkManager    *network.Manager
+	CgroupManager     cgroup.Manager
+	FileSystemManager fs.Manager
 }
 
 func New() (Runtime, error) {
@@ -26,8 +28,9 @@ func New() (Runtime, error) {
 		return Runtime{}, err
 	}
 	return Runtime{
-		NetworkManager: netManager,
-		CgroupManager:  cgroup.New(),
+		NetworkManager:    &netManager,
+		CgroupManager:     cgroup.New(),
+		FileSystemManager: fs.New(),
 	}, nil
 }
 
@@ -36,7 +39,7 @@ func (r Runtime) Run(cont *spec.ContainerSpec) error {
 	if err != nil {
 		return err
 	}
-	process := proc.Prepare(cont.Name, containerIP, cont.Command)
+	process := proc.Prepare(cont.Name, cont.Command)
 	if err := logging.ProcessLogs(cont.Name, process, cont.Detach); err != nil {
 		return err
 	}
@@ -44,15 +47,17 @@ func (r Runtime) Run(cont *spec.ContainerSpec) error {
 	if err != nil {
 		return err
 	}
+	p, err := proc.ProcessStats(pid)
+	if err != nil {
+		return err
+	}
+	if err := proc.Save(p); err != nil {
+		return fmt.Errorf("Error saving process: %v\n", err)
+	}
 	if err := r.CgroupManager.CreateAndAttach(pid, cont.CPU); err != nil {
 		return err
 	}
 	networkSpec, err := r.NetworkManager.SetUp(pid, containerIP, cont.Ports)
-	if err != nil {
-		return err
-	}
-
-	p, err := proc.ProcessStats(pid)
 	if err != nil {
 		return err
 	}
@@ -70,6 +75,15 @@ func (r Runtime) Run(cont *spec.ContainerSpec) error {
 		Cgroup:      cgPath,
 		NetworkSpec: networkSpec,
 		ProcStats:   p,
+	}
+
+	if err := utils.WriteToSocket(spec.ContainerSocket{
+		IP:          containerIP,
+		ID:          cont.Name,
+		Env:         cont.Environment,
+		ExposePorts: len(networkSpec.Ports) > 0,
+	}); err != nil {
+		fmt.Printf("Error writing to socket: %v\n", err)
 	}
 
 	err = AttachNameToPID(container)
@@ -108,9 +122,18 @@ func (r Runtime) Remove(rm *spec.Removal) error {
 	var containers []string
 
 	if rm.Inactive || rm.All {
-		containers, err = RetrieveAllContainers()
+		all, err := RetrieveAllContainers()
 		if err != nil {
 			return fmt.Errorf("Could not retrieve list of containers: %v\n", err)
+		}
+		for _, c := range all {
+			cont, err := GetContainerDataFromName(c)
+			if err != nil {
+				continue
+			}
+			if !proc.IsProcActive(cont.PID, cont.StartTime) || rm.All {
+				containers = append(containers, c)
+			}
 		}
 	} else {
 		containers = append(containers, rm.Name)
@@ -130,6 +153,27 @@ func (r Runtime) Remove(rm *spec.Removal) error {
 		if err := os.RemoveAll(filepath.Join(dir, "containers", c)); err != nil {
 			return fmt.Errorf("Error deleting container data: %v\n", err)
 		}
+	}
+	return nil
+}
+
+func (r Runtime) Clean() error {
+	dir, err := utils.CtrzStateDir()
+	if err != nil {
+		return err
+	}
+	containers := getContainerFromPID(dir)
+	rm := &spec.Removal{
+		Force: true,
+	}
+	for _, cont := range containers {
+		proc.Kill(rm, cont.pid, cont.starttime)
+	}
+	if err := r.NetworkManager.Clean(); err != nil {
+		return err
+	}
+	if err := fs.Clean(); err != nil {
+		return err
 	}
 	return nil
 }

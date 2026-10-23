@@ -4,11 +4,7 @@ BINARY := ctrz
 GOOS := $(shell go env GOOS)
 GOARCH := $(shell go env GOARCH)
 
-TARGETS := \
-	linux/amd64 \
-	linux/arm64 \
-	linux/386 \
-	linux/arm
+TARGETS := linux/arm64
 
 VERSION := $(shell git describe --tags --abbrev=0 2>/dev/null || echo dev)
 COMMIT := $(shell git rev-parse HEAD 2>/dev/null || echo dev)
@@ -35,7 +31,7 @@ release: test
 	done
 
 test:
-	go test ctrz/cgroup ctrz/logging ctrz/runtime ctrz/network ctrz/proc ctrz/fs ctrz/config -vet=all
+	go test ./... -vet=all
 
 clean:
 	rm -rf $(BUILD_DIR)

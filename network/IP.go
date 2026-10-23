@@ -33,7 +33,10 @@ func AssignContIP() (ip string, err error) {
 		defer func() {
 			err = errors.Join(err, newFile.Close())
 		}()
-		containerIP := randIP([]string{})
+		containerIP, err := randIP([]string{})
+		if err != nil {
+			return "", err
+		}
 		if err := writeIPToFile(containerIP, dir); err != nil {
 			return "", err
 		}
@@ -43,7 +46,10 @@ func AssignContIP() (ip string, err error) {
 	if err != nil {
 		return "", err
 	}
-	containerIP := randIP(takenIPs)
+	containerIP, err := randIP(takenIPs)
+	if err != nil {
+		return "", err
+	}
 	if err := writeIPToFile(containerIP, dir); err != nil {
 		return "", err
 	}
@@ -64,19 +70,18 @@ func assignedIPs(dir string) ([]string, error) {
 	return strings.Split(data, "\n"), nil
 }
 
-func randIP(takenIPs []string) string {
-	baseIP := "10.200.1"
-	client := 0
-	var containerIP string
-	for client < 2 {
-		client = rand.Intn(256)
-		containerIP = fmt.Sprintf("%s.%d", baseIP, client)
-		if !slices.Contains(takenIPs, containerIP) {
-			break
-		}
-		client = 0
+func randIP(takenIPs []string) (string, error) {
+	if len(takenIPs) == 253 {
+		return "", fmt.Errorf("IP space already exhausted\n")
 	}
-	return containerIP
+	baseIP := "10.200.1"
+	client := rand.Intn(255)
+	containerIP := fmt.Sprintf("%s.%d", baseIP, client)
+	for client < 2 || slices.Contains(takenIPs, containerIP) {
+		client = rand.Intn(255)
+		containerIP = fmt.Sprintf("%s.%d", baseIP, client)
+	}
+	return containerIP, nil
 }
 
 func writeIPToFile(IP, dir string) (err error) {

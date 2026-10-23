@@ -28,6 +28,7 @@ var statusCmd = &cobra.Command{
 	Short: "Show live resource usage of a process",
 	Args:  cobra.ExactArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
+		utils.EnsureRoot()
 		containerName := args[0]
 		output, err := cmd.Flags().GetString("out")
 		if err != nil {

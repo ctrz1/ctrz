@@ -13,12 +13,13 @@ type Container struct {
 
 // Specification based on user input
 type ContainerSpec struct {
-	Name    string   `json:"name"`
-	CPU     string   `json:"cpu"`
-	Command []string `json:"command"`
-	Remove  bool     `json:"remove"`
-	Detach  bool     `json:"detached"`
-	Ports   []string `json:"ports"`
+	Name        string   `json:"name"`
+	CPU         string   `json:"cpu"`
+	Command     []string `json:"command"`
+	Remove      bool     `json:"remove"`
+	Detach      bool     `json:"detached"`
+	Ports       []string `json:"ports"`
+	Environment []string `json:"environment"`
 }
 
 type Removal struct {
@@ -26,4 +27,11 @@ type Removal struct {
 	Force    bool
 	All      bool
 	Inactive bool
+}
+
+type ContainerSocket struct {
+	IP          string
+	ID          string
+	Env         []string
+	ExposePorts bool
 }

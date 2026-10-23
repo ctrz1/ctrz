@@ -65,5 +65,12 @@ func merge(cli *CLIOptions, conf *spec.ContainerSpec) spec.ContainerSpec {
 		ret.Ports = conf.Ports
 	}
 
+	// Environment
+	if cli != nil && cli.Environment != nil {
+		ret.Environment = *cli.Environment
+	} else if conf != nil {
+		ret.Environment = conf.Environment
+	}
+
 	return ret
 }
