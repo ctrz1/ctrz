@@ -8,6 +8,7 @@ import (
 	"log/slog"
 
 	"github.com/google/nftables"
+	"github.com/vishvananda/netlink"
 )
 
 func (m Manager) removeContainerNetworking(network spec.Network) error {
@@ -97,4 +98,21 @@ func (m *Manager) removeBlocker(network spec.Network, rules []*nftables.Rule) {
 			}
 		}
 	}
+}
+
+func (m *Manager) removeNfTable() error {
+	c := m.Nftables.Conn
+	table := m.Nftables.Table
+
+	c.DelTable(table)
+
+	return c.Flush()
+}
+
+func (m *Manager) removeBridge() error {
+	bridge, err := netlink.LinkByName(m.Bridge)
+	if err != nil {
+		return err
+	}
+	return netlink.LinkDel(bridge)
 }

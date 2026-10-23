@@ -15,9 +15,19 @@ container:
     detached: true
     command:
     - "webserver"
+    environment:
+    - "KEY=VALUE"
 ```
 
 This is fully optional and not required to run a container. By default `ctrz` will check for a file called `ctrz.yaml` in the current directory. If the file is not found, no error will be thrown. If a config file lives in a different path, it can be used with the `--config` flag. The config hierarchy is `CLI > ctrz.yaml > defaults`. For every flag specified both in the cli and the yaml config, the cli parameter will be used.
+
+All [applets](../../fs/utils.go) included in busybox can be called directly. E.g.:
+
+```
+ctrz run --rm -- echo hello
+```
+
+This command will directly execute `echo hello` within the container. The `--rm` flag will remove the container once the command has executed.
 
 You can run `ctrz ps` to see all runing, stopped and dangling containers. You should see output similar to:
 

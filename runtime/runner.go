@@ -39,7 +39,7 @@ func (r Runtime) Run(cont *spec.ContainerSpec) error {
 	if err != nil {
 		return err
 	}
-	process := proc.Prepare(cont.Name, containerIP, cont.Command)
+	process := proc.Prepare(cont.Name, cont.Command)
 	if err := logging.ProcessLogs(cont.Name, process, cont.Detach); err != nil {
 		return err
 	}
@@ -47,15 +47,17 @@ func (r Runtime) Run(cont *spec.ContainerSpec) error {
 	if err != nil {
 		return err
 	}
+	p, err := proc.ProcessStats(pid)
+	if err != nil {
+		return err
+	}
+	if err := proc.Save(p); err != nil {
+		return fmt.Errorf("Error saving process: %v\n", err)
+	}
 	if err := r.CgroupManager.CreateAndAttach(pid, cont.CPU); err != nil {
 		return err
 	}
 	networkSpec, err := r.NetworkManager.SetUp(pid, containerIP, cont.Ports)
-	if err != nil {
-		return err
-	}
-
-	p, err := proc.ProcessStats(pid)
 	if err != nil {
 		return err
 	}
@@ -151,6 +153,27 @@ func (r Runtime) Remove(rm *spec.Removal) error {
 		if err := os.RemoveAll(filepath.Join(dir, "containers", c)); err != nil {
 			return fmt.Errorf("Error deleting container data: %v\n", err)
 		}
+	}
+	return nil
+}
+
+func (r Runtime) Clean() error {
+	dir, err := utils.CtrzStateDir()
+	if err != nil {
+		return err
+	}
+	containers := getContainerFromPID(dir)
+	rm := &spec.Removal{
+		Force: true,
+	}
+	for _, cont := range containers {
+		proc.Kill(rm, cont.pid, cont.starttime)
+	}
+	if err := r.NetworkManager.Clean(); err != nil {
+		return err
+	}
+	if err := fs.Clean(); err != nil {
+		return err
 	}
 	return nil
 }

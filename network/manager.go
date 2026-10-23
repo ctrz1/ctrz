@@ -95,8 +95,21 @@ func (m Manager) SetUp(pid int, ip string, ports []string) (spec.Network, error)
 	return networkSpec, nil
 }
 
-func (m Manager) Configure() {
+func (m Manager) Clean() error {
+	if err := m.initialiseNftables(); err != nil {
+		return err
+	}
+	if err := m.getChains(); err != nil {
+		return err
+	}
+	if err := m.removeNfTable(); err != nil {
+		return err
+	}
 
+	if err := m.removeBridge(); err != nil {
+		return nil
+	}
+	return nil
 }
 
 func (m *Manager) Cleanup(network spec.Network) error {
