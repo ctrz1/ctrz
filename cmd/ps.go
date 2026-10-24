@@ -22,7 +22,11 @@ var psCmd = &cobra.Command{
 		utils.EnsureRoot()
 		containers, err := runtime.RetrieveAllContainers()
 		if err != nil {
-			log.Fatalf("Error retrieving containers: %v\n", err)
+			containers = []string{}
+		}
+		if len(containers) == 0 {
+			fmt.Println("No containers")
+			os.Exit(0)
 		}
 
 		w := tabwriter.NewWriter(os.Stdout, 0, 0, 4, ' ', 0)
