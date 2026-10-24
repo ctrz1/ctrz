@@ -192,7 +192,7 @@ func (m Manager) nat() error {
 		}
 	}
 
-	if !(createOutbound || createInbound) {
+	if !createOutbound && !createInbound {
 		return nil
 	}
 

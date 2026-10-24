@@ -3,6 +3,7 @@ package utils
 import (
 	"ctrz/spec"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"net"
 	"os"
@@ -30,7 +31,9 @@ func ListenToSocket() (spec.ContainerSocket, error) {
 	if err != nil {
 		return cont, err
 	}
-	defer c.Close()
+	defer func() {
+		err = errors.Join(err, c.Close())
+	}()
 
 	nr, err := c.Read(buf)
 	if err != nil {
@@ -54,7 +57,9 @@ func WriteToSocket(cont spec.ContainerSocket) error {
 	if err != nil {
 		return err
 	}
-	defer c.Close()
+	defer func() {
+		err = errors.Join(err, c.Close())
+	}()
 
 	b, err := json.Marshal(cont)
 	if err != nil {

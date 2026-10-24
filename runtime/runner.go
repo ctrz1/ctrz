@@ -167,7 +167,9 @@ func (r Runtime) Clean() error {
 		Force: true,
 	}
 	for _, cont := range containers {
-		proc.Kill(rm, cont.pid, cont.starttime)
+		if err := proc.Kill(rm, cont.pid, cont.starttime); err != nil {
+			continue
+		}
 	}
 	if err := r.NetworkManager.Clean(); err != nil {
 		return err
