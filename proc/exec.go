@@ -41,7 +41,7 @@ func Run(process *exec.Cmd) (int, error) {
 	return process.Process.Pid, nil
 }
 
-func Save(proc spec.ProcStats) error {
+func Save(proc spec.ProcStats) (err error) {
 	dir, err := utils.CtrzStateDir()
 	if err != nil {
 		return err

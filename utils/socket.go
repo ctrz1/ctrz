@@ -35,8 +35,8 @@ func NewSocketListener(path string) (*SocketListener, error) {
 	return &SocketListener{l: l}, nil
 }
 
-func (s *SocketListener) Close() error { 
-	return s.l.Close() 
+func (s *SocketListener) Close() error {
+	return s.l.Close()
 }
 
 func (s *SocketListener) ListenToSocket(ctx context.Context) (cont spec.ContainerSocket, err error) {
@@ -54,8 +54,8 @@ func (s *SocketListener) ListenToSocket(ctx context.Context) (cont spec.Containe
 		err = errors.Join(err, c.Close())
 	}()
 
-	stopConn := context.AfterFunc(ctx, func() { 
-		_ = c.SetDeadline(time.Now()) 
+	stopConn := context.AfterFunc(ctx, func() {
+		_ = c.SetDeadline(time.Now())
 	})
 	defer stopConn()
 

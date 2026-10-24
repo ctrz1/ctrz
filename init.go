@@ -4,6 +4,7 @@ package main
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"log"
 	"os"
@@ -98,19 +99,21 @@ func ctrzInit() {
 	}
 }
 
-func readFromSock(sockPath string) (spec.ContainerSocket, error) {
+func readFromSock(sockPath string) (cont spec.ContainerSocket, err error) {
 	l, err := utils.NewSocketListener(sockPath)
 	if err != nil {
 		return spec.ContainerSocket{}, err
 	}
-	defer l.Close()
+	defer func() {
+		err = errors.Join(err, l.Close())
+	}()
 
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer stop()
 
 	rctx, cancel := context.WithTimeout(ctx, 10*time.Second)
 	defer cancel()
-	cont, err := l.ListenToSocket(rctx)
+	cont, err = l.ListenToSocket(rctx)
 	if err != nil {
 		return spec.ContainerSocket{}, fmt.Errorf("Error listening to socket: %v\n", err)
 	}

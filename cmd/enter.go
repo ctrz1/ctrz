@@ -16,7 +16,7 @@ import (
 var enterCmd = &cobra.Command{
 	Use:   "enter <container name> [OPTIONS]",
 	Short: "Enter into an interactive shell within a container",
-	Args: cobra.MinimumNArgs(1),
+	Args:  cobra.MinimumNArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
 		utils.EnsureRoot()
 		command, err := cmd.Flags().GetString("command")
