@@ -3,22 +3,31 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"log"
 	"os"
+	"os/signal"
 	"path/filepath"
 	"syscall"
+	"time"
 
 	"ctrz/fs"
 	"ctrz/mount"
 	"ctrz/network"
+	"ctrz/spec"
 	"ctrz/utils"
 )
 
 func ctrzInit() {
-	cont, err := utils.ListenToSocket()
+	dir, err := utils.CtrzStateDir()
 	if err != nil {
-		log.Fatalf("Error listening to socket: %v\n", err)
+		log.Fatal(err)
+	}
+	sockPath := filepath.Join(dir, "ctrz.sock")
+	cont, err := readFromSock(sockPath)
+	if err != nil {
+		log.Fatal(err)
 	}
 
 	containerIP := cont.IP
@@ -87,4 +96,23 @@ func ctrzInit() {
 	if err != nil {
 		log.Fatal("exec failed: ", err)
 	}
+}
+
+func readFromSock(sockPath string) (spec.ContainerSocket, error) {
+	l, err := utils.NewSocketListener(sockPath)
+	if err != nil {
+		return spec.ContainerSocket{}, err
+	}
+	defer l.Close()
+
+	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
+	defer stop()
+
+	rctx, cancel := context.WithTimeout(ctx, 10*time.Second)
+	defer cancel()
+	cont, err := l.ListenToSocket(rctx)
+	if err != nil {
+		return spec.ContainerSocket{}, fmt.Errorf("Error listening to socket: %v\n", err)
+	}
+	return cont, nil
 }

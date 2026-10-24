@@ -3,6 +3,7 @@
 package runtime
 
 import (
+	"context"
 	"ctrz/cgroup"
 	"ctrz/fs"
 	"ctrz/logging"
@@ -12,7 +13,9 @@ import (
 	"ctrz/utils"
 	"fmt"
 	"os"
+	"os/signal"
 	"path/filepath"
+	"syscall"
 	"time"
 )
 
@@ -35,6 +38,11 @@ func New() (Runtime, error) {
 }
 
 func (r Runtime) Run(cont *spec.ContainerSpec) error {
+	dir, err := utils.CtrzStateDir()
+	if err != nil {
+		return err
+	}
+	sockPath := filepath.Join(dir, "ctrz.sock")
 	containerIP, err := r.NetworkManager.Initialise()
 	if err != nil {
 		return err
@@ -77,7 +85,13 @@ func (r Runtime) Run(cont *spec.ContainerSpec) error {
 		ProcStats:   p,
 	}
 
-	if err := utils.WriteToSocket(spec.ContainerSocket{
+	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
+	defer stop()
+
+	sctx, cancel := context.WithTimeout(ctx, 5*time.Second)
+	defer cancel()
+
+	if err := utils.WriteToSocket(sctx, sockPath, spec.ContainerSocket{
 		IP:          containerIP,
 		ID:          cont.Name,
 		Env:         cont.Environment,
