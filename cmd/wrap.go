@@ -17,6 +17,7 @@ import (
 var wrapCmd = &cobra.Command{
 	Use:   "wrap",
 	Short: "'wrap' a process in a new cgroup",
+	Deprecated: "This command is no longer maintained and may be removed any time",
 	Run: func(cmd *cobra.Command, args []string) {
 		utils.EnsureRoot()
 		pid, err := cmd.Flags().GetInt("pid")
