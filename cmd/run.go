@@ -52,7 +52,7 @@ func init() {
 	rootCmd.AddCommand(runCmd)
 	runCmd.Flags().BoolP("detach", "d", false, "detach process from terminal")
 	runCmd.Flags().Int("cpu", 100, "Limits the CPU usage (in %) of the wrapped process")
-	runCmd.Flags().Int("runtime", 0, "Configures the runtime of a process within a cgroup")
+	runCmd.Flags().Int("quota", 0, "Configures the runtime quota of a process within a cgroup")
 	runCmd.Flags().Int("period", 0, "Determines the time window in which to apply the runtime")
 	runCmd.Flags().String("name", "", "name of new container")
 	runCmd.Flags().StringArrayP("port", "p", []string{}, "Map host port to container port with '<host-port>:<container-port>'")
@@ -116,13 +116,13 @@ func getFlags(cmd *cobra.Command) (config.CLIOptions, string) {
 	if err != nil {
 		log.Fatal(err)
 	}
-	rt, err := cmd.Flags().GetInt("runtime")
+	quota, err := cmd.Flags().GetInt("quota")
 	if err != nil {
 		log.Fatal(err)
 	}
 	var maxCpu string
-	if period > 0 && rt > 0 {
-		maxCpu = fmt.Sprintf("%d %d", rt, period)
+	if period > 0 && quota > 0 {
+		maxCpu = fmt.Sprintf("%d %d", quota, period)
 		c.CPU = &maxCpu
 	} else {
 		cpu, err := cmd.Flags().GetInt("cpu")
