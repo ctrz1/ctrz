@@ -3,6 +3,9 @@ container:
     ports:
     - "8443:8443"
     cpu: 80
+    memory-limit: 15
     detached: true
     command:
     - "demo-webserver"
+    environment:
+    - "KEY=VALUE"

@@ -14,7 +14,7 @@ type CLIOptions struct {
 	Detach      *bool     `json:"detached"`
 	Ports       *[]string `json:"ports"`
 	Environment *[]string `json:"environment"`
-	MemoryLimit *int64   `json:"memory-limit"`
+	MemoryLimit *int64    `json:"memory-limit"`
 }
 
 func Get(cont *CLIOptions, confPath string, skipConfig bool) (spec.ContainerSpec, error) {

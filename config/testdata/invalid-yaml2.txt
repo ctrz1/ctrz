@@ -1,0 +1,14 @@
+# This file has .txt extension so IDE linters do not complain
+
+container:
+  demo:
+    ports:
+    - "8443:8443"
+    cpu: 80
+    memory-limit: 15
+    # Invalid data type
+    detached: 4
+    command:
+    - "demo-webserver"
+    environment:
+    - "KEY=VALUE"
