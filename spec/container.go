@@ -20,6 +20,7 @@ type ContainerSpec struct {
 	Detach      bool     `json:"detached"`
 	Ports       []string `json:"ports"`
 	Environment []string `json:"environment"`
+	MemoryLimit int64    `json:"memory-limit"`
 }
 
 type Removal struct {

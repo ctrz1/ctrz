@@ -60,6 +60,7 @@ func init() {
 	runCmd.Flags().StringP("config", "f", "ctrz.yaml", "Path to container config")
 	runCmd.Flags().Bool("no-config", false, "Ignore the 'ctrz.yaml' file in the current directory")
 	runCmd.Flags().StringArrayP("env", "e", []string{}, "Pass custom environment variables in the from KEY=VALUE")
+	runCmd.Flags().Int64("memory", 0, "Limits the maximum memory (in MiB) of the container")
 	runCmd.MarkFlagsRequiredTogether("quota", "period")
 	runCmd.MarkFlagsMutuallyExclusive("config", "no-config")
 	runCmd.MarkFlagsMutuallyExclusive("cpu", "quota")
@@ -137,6 +138,14 @@ func getFlags(cmd *cobra.Command) (config.CLIOptions, string) {
 		if cmd.Flags().Changed("cpu") {
 			c.CPU = &maxCpu
 		}
+	}
+
+	memory, err := cmd.Flags().GetInt64("memory")
+	if err != nil {
+		log.Fatal("error retrieving --memory:", err)
+	}
+	if cmd.Flags().Changed("memory") {
+		c.MemoryLimit = &memory
 	}
 
 	return c, conf

@@ -62,7 +62,10 @@ func (r Runtime) Run(cont *spec.ContainerSpec) error {
 	if err := proc.Save(p); err != nil {
 		return fmt.Errorf("Error saving process: %v\n", err)
 	}
-	if err := r.CgroupManager.CreateAndAttach(pid, cont.CPU); err != nil {
+	if err := r.CgroupManager.CreateAndAttach(&cgroup.Conf{
+		CPU:    cont.CPU,
+		Memory: cont.MemoryLimit,
+	}, pid); err != nil {
 		return err
 	}
 	networkSpec, err := r.NetworkManager.SetUp(pid, containerIP, cont.Ports)
