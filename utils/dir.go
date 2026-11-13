@@ -5,9 +5,11 @@ import (
 	"path/filepath"
 )
 
+var CtrzRootDir = filepath.Join("/var", "lib", "ctrz")
+
 func CtrzStateDir() (string, error) {
 	if os.Geteuid() == 0 {
-		return filepath.Join("/var", "lib", "ctrz"), nil
+		return CtrzRootDir, nil
 	}
 	home, err := os.UserHomeDir()
 	if err != nil {

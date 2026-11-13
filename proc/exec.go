@@ -14,20 +14,40 @@ import (
 	"syscall"
 )
 
+const hostID = 65534
+
 func Prepare(name string, command []string) *exec.Cmd {
 	args := append([]string{"__ctrz_init"}, command...)
 
 	process := exec.Command("/proc/self/exe", args...)
 
 	process.SysProcAttr = &syscall.SysProcAttr{
-		Cloneflags:
-		// syscall.CLONE_NEWUSER | --> can be used for rootless containers later. Ignore for now
-		syscall.CLONE_NEWNET |
+		Cloneflags: syscall.CLONE_NEWUSER | //--> can be used for rootless containers later. Ignore for now
+			syscall.CLONE_NEWNET |
 			syscall.CLONE_NEWUTS |
 			syscall.CLONE_NEWPID,
 
-		Unshareflags:               syscall.CLONE_NEWNS,
-		GidMappingsEnableSetgroups: false,
+		Unshareflags: syscall.CLONE_NEWNS,
+		//GidMappingsEnableSetgroups: false,
+		UidMappings: []syscall.SysProcIDMap{
+			{
+				ContainerID: 0,
+				HostID:      hostID,
+				Size:        1,
+			},
+		},
+		GidMappings: []syscall.SysProcIDMap{
+			{
+				ContainerID: 0,
+				HostID:      hostID,
+				Size:        1,
+			},
+		},
+		Credential: &syscall.Credential{
+			Uid:    0,
+			Gid:    0,
+			Groups: []uint32{},
+		},
 	}
 	return process
 }

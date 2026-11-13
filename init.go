@@ -21,10 +21,9 @@ import (
 )
 
 func ctrzInit() {
-	dir, err := utils.CtrzStateDir()
-	if err != nil {
-		log.Fatal(err)
-	}
+	fmt.Println("User ID", os.Geteuid(), os.Getuid())
+	fmt.Println("Group ID", os.Getegid(), os.Getgid())
+	dir := filepath.Join("/var", "lib", "ctrz")
 	sockPath := filepath.Join(dir, "ctrz.sock")
 	cont, err := readFromSock(sockPath)
 	if err != nil {
@@ -50,6 +49,10 @@ func ctrzInit() {
 		log.Fatalf("Error injecting %s into namespace: %v\n", cmd, err)
 	}
 
+	if err := mount.Proc(); err != nil {
+		log.Fatal(err)
+	}
+
 	if err := mount.PrepHost(rootfs); err != nil {
 		log.Fatal(err)
 	}
@@ -62,11 +65,8 @@ func ctrzInit() {
 		log.Fatalf("Error creating user home /root: %v\n", err)
 	}
 
-	if err := mount.Proc(); err != nil {
-		log.Fatal(err)
-	}
-
 	if err := mount.Dev(); err != nil {
+		// Worry about /dev later
 		fmt.Print(err)
 	}
 

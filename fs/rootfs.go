@@ -18,12 +18,8 @@ import (
 var rootfsTar []byte
 
 func MountRootFs(containerID string) (string, error) {
-	dir, err := utils.CtrzStateDir()
-	if err != nil {
-		return "", err
-	}
 	rootfsDir := filepath.Join(
-		dir,
+		utils.CtrzRootDir,
 		"containers",
 		containerID,
 	)
