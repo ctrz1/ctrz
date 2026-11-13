@@ -1,0 +1,75 @@
+//go:build linux
+
+package cmd
+
+import (
+	"fmt"
+	"log"
+	"os"
+	"os/exec"
+	"path/filepath"
+	"strconv"
+	"strings"
+
+	"ctrz/cgroup"
+	"ctrz/proc"
+	"ctrz/utils"
+
+	"github.com/spf13/cobra"
+)
+
+var startDashboardCmd = &cobra.Command{
+	Use:   "start",
+	Short: "Start ctrz admin dashboard",
+	Args:  cobra.ExactArgs(0),
+	Run: func(cmd *cobra.Command, args []string) {
+		utils.EnsureRoot()
+		dir, err := utils.CtrzStateDir()
+		path := filepath.Join(dir, "dashboard")
+
+		if err != nil {
+			log.Fatal(err)
+		}
+		data, err := os.ReadFile(path)
+		if err == nil {
+			s := strings.Split(string(data), " ")
+			pid, err := strconv.Atoi(s[0])
+			if err != nil {
+				log.Fatal(err)
+			}
+			starttime, err := strconv.ParseUint(s[1], 10, 64)
+			if err != nil {
+				log.Fatal(err)
+			}
+			if proc.IsProcActive(pid, starttime) {
+				log.Fatalf("Dashboard already started with PID: %d\n", pid)
+			}
+		}
+
+		d := exec.Command("/proc/self/exe", "__dashboard")
+
+		if err := d.Start(); err != nil {
+			log.Fatal(err)
+		}
+		cgroupManager := cgroup.New()
+		if err := cgroupManager.CreateAndAttach(&cgroup.Conf{CPU: "100000 100000"}, d.Process.Pid); err != nil {
+			log.Fatal(err)
+		}
+		if err := os.MkdirAll(dir, 0o755); err != nil {
+			log.Fatal(err)
+		}
+		stat, err := proc.ProcessStats(d.Process.Pid)
+		if err != nil {
+			log.Fatal(err)
+		}
+		dashboardInfo := fmt.Sprintf("%d %d", d.Process.Pid, stat.Starttime)
+		if err := os.WriteFile(path, []byte(dashboardInfo), 0o755); err != nil {
+			log.Fatal(err)
+		}
+		fmt.Printf("Started dashboard\n")
+	},
+}
+
+func init() {
+	dashboardCmd.AddCommand(startDashboardCmd)
+}

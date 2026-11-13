@@ -148,11 +148,11 @@ var statusCmd = &cobra.Command{
 			if err != nil {
 				fmt.Fprintf(&buf, "Network: error reading stats: %v\n\n", err)
 			} else if len(sockets) > 0 {
-				currentSent, err := strconv.ParseUint(sockets[0].ReceivedBytes, 10, 64)
+				currentSent, err := strconv.ParseUint(sockets[0].SentBytes, 10, 64)
 				if err != nil {
 					currentSent = 0
 				}
-				currentReceived, err := strconv.ParseUint(sockets[0].SentBytes, 10, 64)
+				currentReceived, err := strconv.ParseUint(sockets[0].ReceivedBytes, 10, 64)
 				if err != nil {
 					currentReceived = 0
 				}

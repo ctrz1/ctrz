@@ -1,0 +1,56 @@
+package cmd
+
+import (
+	"log"
+	"os"
+	"os/exec"
+	"path/filepath"
+	"strconv"
+	"strings"
+
+	"ctrz/proc"
+	"ctrz/utils"
+
+	"github.com/spf13/cobra"
+)
+
+var dashboardStopCmd = &cobra.Command{
+	Use:   "stop",
+	Short: "Stop ctrz admin dashboard",
+	Args:  cobra.ExactArgs(0),
+	Run: func(cmd *cobra.Command, args []string) {
+		utils.EnsureRoot()
+		dir, err := utils.CtrzStateDir()
+		path := filepath.Join(dir, "dashboard")
+
+		if err != nil {
+			log.Fatal(err)
+		}
+		data, err := os.ReadFile(path)
+		if err != nil {
+			log.Fatal(err)
+		}
+		s := strings.Split(string(data), " ")
+		pid, err := strconv.Atoi(s[0])
+		if err != nil {
+			log.Fatal(err)
+		}
+		starttime, err := strconv.ParseUint(s[1], 10, 64)
+		if err != nil {
+			log.Fatal(err)
+		}
+		if proc.IsProcActive(pid, starttime) {
+			out, err := exec.Command("kill", strconv.Itoa(pid)).CombinedOutput()
+			if err != nil {
+				log.Fatalf("%v: %s", err, out)
+			}
+		}
+		if err := os.Remove(path); err != nil {
+			log.Fatal(err)
+		}
+	},
+}
+
+func init() {
+	dashboardCmd.AddCommand(dashboardStopCmd)
+}
