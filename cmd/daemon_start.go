@@ -1,3 +1,5 @@
+//go:build linux
+
 package cmd
 
 import (
@@ -50,7 +52,7 @@ var startDaemonCmd = &cobra.Command{
 			log.Fatal(err)
 		}
 		cgroupManager := cgroup.New()
-		if err := cgroupManager.CreateAndAttach(d.Process.Pid, "100000 100000"); err != nil {
+		if err := cgroupManager.CreateAndAttach(&cgroup.Conf{CPU: "100000 100000"}, d.Process.Pid); err != nil {
 			log.Fatal(err)
 		}
 		if err := os.MkdirAll(dir, 0o755); err != nil {

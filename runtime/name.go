@@ -79,7 +79,7 @@ func RetrieveAllContainers() ([]string, error) {
 	}
 	dirs, err := os.ReadDir(filepath.Join(stateDir, "containers"))
 	if err != nil {
-		log.Fatal(err)
+		return nil, err
 	}
 	var containers []string
 	for _, dir := range dirs {

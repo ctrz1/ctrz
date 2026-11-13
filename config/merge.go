@@ -72,5 +72,12 @@ func merge(cli *CLIOptions, conf *spec.ContainerSpec) spec.ContainerSpec {
 		ret.Environment = conf.Environment
 	}
 
+	// Memory Limit
+	if cli != nil && cli.MemoryLimit != nil {
+		ret.MemoryLimit = *cli.MemoryLimit * (1 << 20)
+	} else if conf != nil {
+		ret.MemoryLimit = conf.MemoryLimit * (1 << 20)
+	}
+
 	return ret
 }

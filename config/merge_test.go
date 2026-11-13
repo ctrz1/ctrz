@@ -31,7 +31,7 @@ func TestMerge(t *testing.T) {
 }
 
 func equals(a, b spec.ContainerSpec) bool {
-	if a.CPU != b.CPU || a.Detach != b.Detach || a.Name != b.Name || a.Remove != b.Remove {
+	if a.CPU != b.CPU || a.Detach != b.Detach || a.Name != b.Name || a.Remove != b.Remove || a.MemoryLimit != b.MemoryLimit {
 		return false
 	}
 	for i, v := range a.Command {
@@ -41,6 +41,11 @@ func equals(a, b spec.ContainerSpec) bool {
 	}
 	for i, v := range a.Ports {
 		if b.Ports[i] != v {
+			return false
+		}
+	}
+	for i, v := range a.Environment {
+		if b.Environment[i] != v {
 			return false
 		}
 	}

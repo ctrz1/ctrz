@@ -4,6 +4,7 @@ import (
 	"archive/tar"
 	"bytes"
 	"compress/gzip"
+	"ctrz/utils"
 	_ "embed"
 	"errors"
 	"fmt"
@@ -17,8 +18,13 @@ import (
 var rootfsTar []byte
 
 func MountRootFs(containerID string) (string, error) {
+	dir, err := utils.CtrzStateDir()
+	if err != nil {
+		return "", err
+	}
 	rootfsDir := filepath.Join(
-		"/var/lib/ctrz/containers",
+		dir,
+		"containers",
 		containerID,
 	)
 

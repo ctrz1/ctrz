@@ -52,7 +52,7 @@ func init() {
 	rootCmd.AddCommand(runCmd)
 	runCmd.Flags().BoolP("detach", "d", false, "detach process from terminal")
 	runCmd.Flags().Int("cpu", 100, "Limits the CPU usage (in %) of the wrapped process")
-	runCmd.Flags().Int("runtime", 0, "Configures the runtime of a process within a cgroup")
+	runCmd.Flags().Int("quota", 0, "Configures the runtime quota of a process within a cgroup")
 	runCmd.Flags().Int("period", 0, "Determines the time window in which to apply the runtime")
 	runCmd.Flags().String("name", "", "name of new container")
 	runCmd.Flags().StringArrayP("port", "p", []string{}, "Map host port to container port with '<host-port>:<container-port>'")
@@ -60,9 +60,10 @@ func init() {
 	runCmd.Flags().StringP("config", "f", "ctrz.yaml", "Path to container config")
 	runCmd.Flags().Bool("no-config", false, "Ignore the 'ctrz.yaml' file in the current directory")
 	runCmd.Flags().StringArrayP("env", "e", []string{}, "Pass custom environment variables in the from KEY=VALUE")
-	runCmd.MarkFlagsRequiredTogether("runtime", "period")
+	runCmd.Flags().Int64("memory", 0, "Limits the maximum memory (in MiB) of the container")
+	runCmd.MarkFlagsRequiredTogether("quota", "period")
 	runCmd.MarkFlagsMutuallyExclusive("config", "no-config")
-	runCmd.MarkFlagsMutuallyExclusive("cpu", "runtime")
+	runCmd.MarkFlagsMutuallyExclusive("cpu", "quota")
 }
 
 func getFlags(cmd *cobra.Command) (config.CLIOptions, string) {
@@ -116,13 +117,13 @@ func getFlags(cmd *cobra.Command) (config.CLIOptions, string) {
 	if err != nil {
 		log.Fatal(err)
 	}
-	rt, err := cmd.Flags().GetInt("runtime")
+	quota, err := cmd.Flags().GetInt("quota")
 	if err != nil {
 		log.Fatal(err)
 	}
 	var maxCpu string
-	if period > 0 && rt > 0 {
-		maxCpu = fmt.Sprintf("%d %d", rt, period)
+	if period > 0 && quota > 0 {
+		maxCpu = fmt.Sprintf("%d %d", quota, period)
 		c.CPU = &maxCpu
 	} else {
 		cpu, err := cmd.Flags().GetInt("cpu")
@@ -137,6 +138,14 @@ func getFlags(cmd *cobra.Command) (config.CLIOptions, string) {
 		if cmd.Flags().Changed("cpu") {
 			c.CPU = &maxCpu
 		}
+	}
+
+	memory, err := cmd.Flags().GetInt64("memory")
+	if err != nil {
+		log.Fatal("error retrieving --memory:", err)
+	}
+	if cmd.Flags().Changed("memory") {
+		c.MemoryLimit = &memory
 	}
 
 	return c, conf

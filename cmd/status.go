@@ -135,11 +135,11 @@ var statusCmd = &cobra.Command{
 					fmt.Fprintf(&buf, "Memory: error reading stats: %v\n", err)
 				} else {
 					buf.WriteString("Memory:\n")
-					fmt.Fprintf(&buf, "  current:			%d KB\n", mem.Current/1024)
-					if mem.Max > math.MaxInt64-1024 || mem.Max == 0 {
-						buf.WriteString("  max:     unlimited\n")
+					fmt.Fprintf(&buf, "  current:		%s\n", convertBytesToFittingUnit(mem.Current))
+					if mem.Max > math.MaxInt64 || mem.Max == 0 {
+						buf.WriteString("  max:			unlimited\n\n")
 					} else {
-						fmt.Fprintf(&buf, "  max:			%d KB\n", mem.Max/1024)
+						fmt.Fprintf(&buf, "  max:			%s\n\n", convertBytesToFittingUnit(mem.Max))
 					}
 				}
 			}
@@ -159,7 +159,7 @@ var statusCmd = &cobra.Command{
 				deltaSent := currentSent - prevSentBytes
 				deltaReceived := currentReceived - prevRecBytes
 				buf.WriteString("Network:\n")
-				fmt.Fprintf(&buf, "  Total Connections:		%d\n", len(sockets))
+				fmt.Fprintf(&buf, "  Total Connections:	%d\n", len(sockets))
 				fmt.Fprintf(&buf, "  Network traffic (namespace level):\n")
 				fmt.Fprintf(&buf, "    Bytes Received:    	%s/second (%s total)\n", convertBytesToFittingUnit(deltaReceived), convertBytesToFittingUnit(currentReceived))
 				fmt.Fprintf(&buf, "    Bytes Sent:     	%s/second (%s total)\n\n", convertBytesToFittingUnit(deltaSent), convertBytesToFittingUnit(currentSent))

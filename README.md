@@ -6,6 +6,8 @@
 
 `ctrz` is an image-less ad-hoc containerisation runtime. It lets you run statically linked binaries in an isolated environment. Find some [documentation](/docs/examples/README.md) on how to use `ctrz`.
 
+> This is a personal project. It is not recommended to be used in a production grade environment, or for security-critical workloads.
+
 ## Installation
 
 > Note that `ctrz` is only available for Linux
