@@ -84,6 +84,9 @@ func randIP(takenIPs []string, staticIp string) (string, error) {
 		if !cidr.Contains(ipv4) {
 			return "", fmt.Errorf("%q outside of subnet 10.200.1.0/24", staticIp)
 		}
+		if ipv4[3] == 0 || ipv4[3] == 1 || ipv4[3] == 255 {
+			return "", fmt.Errorf("IP must not be privileged: %q", staticIp)
+		}
 		if slices.Contains(takenIPs, staticIp) {
 			return "", fmt.Errorf("Bad address: %s already taken", staticIp)
 		}
