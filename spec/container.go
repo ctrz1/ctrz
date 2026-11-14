@@ -21,6 +21,7 @@ type ContainerSpec struct {
 	Ports       []string `json:"ports"`
 	Environment []string `json:"environment"`
 	MemoryLimit int64    `json:"memory-limit"`
+	IP          string        `json:"static-ip"`
 }
 
 type Removal struct {

@@ -79,5 +79,12 @@ func merge(cli *CLIOptions, conf *spec.ContainerSpec) spec.ContainerSpec {
 		ret.MemoryLimit = conf.MemoryLimit * (1 << 20)
 	}
 
+	// Static IP
+	if cli != nil && cli.IP != nil {
+		ret.IP = *cli.IP
+	} else if conf != nil {
+		ret.IP = conf.IP
+	}
+
 	return ret
 }

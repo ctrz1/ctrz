@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"math/rand"
+	"net"
 	"os"
 	"path/filepath"
 	"slices"
@@ -16,7 +17,7 @@ import (
 *	If two instances of ctrz try to create a container at the same, they might end up with the same IP
 **/
 
-func AssignContIP() (ip string, err error) {
+func AssignContIP(staticIp string) (ip string, err error) {
 	dir, err := utils.CtrzStateDir()
 	if err != nil {
 		return "", fmt.Errorf("Error retrieving ctrz state directory: %v\n", err)
@@ -33,7 +34,7 @@ func AssignContIP() (ip string, err error) {
 		defer func() {
 			err = errors.Join(err, newFile.Close())
 		}()
-		containerIP, err := randIP([]string{})
+		containerIP, err := randIP([]string{}, staticIp)
 		if err != nil {
 			return "", err
 		}
@@ -46,7 +47,7 @@ func AssignContIP() (ip string, err error) {
 	if err != nil {
 		return "", err
 	}
-	containerIP, err := randIP(takenIPs)
+	containerIP, err := randIP(takenIPs, staticIp)
 	if err != nil {
 		return "", err
 	}
@@ -70,9 +71,23 @@ func assignedIPs(dir string) ([]string, error) {
 	return strings.Split(data, "\n"), nil
 }
 
-func randIP(takenIPs []string) (string, error) {
+func randIP(takenIPs []string, staticIp string) (string, error) {
 	if len(takenIPs) == 253 {
 		return "", fmt.Errorf("IP space already exhausted\n")
+	}
+	if staticIp != "" {
+		ipv4 := net.ParseIP(staticIp).To4()
+		if ipv4 == nil {
+			return "", fmt.Errorf("Invalid IP: %q", staticIp)
+		}
+		_, cidr, _ := net.ParseCIDR("10.200.1.0/24")
+		if !cidr.Contains(ipv4) {
+			return "", fmt.Errorf("%q outside of subnet 10.200.1.0/24", staticIp)
+		}
+		if slices.Contains(takenIPs, staticIp) {
+			return "", fmt.Errorf("Bad address: %s already taken", staticIp)
+		}
+		return staticIp, nil
 	}
 	baseIP := "10.200.1"
 	client := rand.Intn(255)

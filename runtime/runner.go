@@ -43,7 +43,7 @@ func (r Runtime) Run(cont *spec.ContainerSpec) error {
 		return err
 	}
 	sockPath := filepath.Join(dir, "ctrz.sock")
-	containerIP, err := r.NetworkManager.Initialise()
+	containerIP, err := r.NetworkManager.Initialise(cont.IP)
 	if err != nil {
 		return err
 	}

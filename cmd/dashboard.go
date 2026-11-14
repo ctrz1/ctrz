@@ -9,7 +9,7 @@ import (
 )
 
 var dashboardCmd = &cobra.Command{
-	Use:    "dashboard start|stop [--bind]",
+	Use:    "dashboard start|stop",
 	Short:  "expose ctrz container metrics via admin dashboard",
 	Args:   cobra.ExactArgs(1),
 	Hidden: true,
