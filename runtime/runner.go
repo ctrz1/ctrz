@@ -179,6 +179,13 @@ func (r Runtime) Clean() error {
 	if err != nil {
 		return err
 	}
+	if err := proc.CleanBackground("daemon"); err != nil {
+		return err
+	}
+	if err := proc.CleanBackground("dashboard"); err != nil {
+		return err
+	}
+
 	containers := getContainerFromPID(dir)
 	rm := &spec.Removal{
 		Force: true,
