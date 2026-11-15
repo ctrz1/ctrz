@@ -11,6 +11,7 @@ import (
 	"ctrz/proc"
 	"ctrz/spec"
 	"ctrz/utils"
+	"errors"
 	"fmt"
 	"os"
 	"os/signal"
@@ -48,12 +49,19 @@ func (r Runtime) Run(cont *spec.ContainerSpec) error {
 		return err
 	}
 	process := proc.Prepare(cont.Name, cont.Command)
-	if err := logging.ProcessLogs(cont.Name, process, cont.Detach); err != nil {
+	cleanup, err := logging.ProcessLogs(cont.Name, process, cont.Detach)
+	if err != nil {
 		return err
 	}
 	pid, err := proc.Run(process)
 	if err != nil {
+		_ = cleanup()
 		return err
+	}
+	if cont.Detach {
+		if err := cleanup(); err != nil {
+			return err
+		}
 	}
 	p, err := proc.ProcessStats(pid)
 	if err != nil {
@@ -109,7 +117,7 @@ func (r Runtime) Run(cont *spec.ContainerSpec) error {
 	}
 	if !cont.Detach {
 		if err := process.Wait(); err != nil {
-			return err
+			return errors.Join(err, cleanup())
 		}
 	}
 	if cont.Remove && !cont.Detach {
