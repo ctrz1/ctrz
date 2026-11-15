@@ -53,7 +53,7 @@ func TestCreateAndAttach_Integration(t *testing.T) {
 	t.Cleanup(func() {
 		_ = cmd.Process.Kill()
 		_ = cmd.Wait()
-		_ = os.Remove(cgroupDir) 
+		_ = os.Remove(cgroupDir)
 	})
 
 	conf := &Conf{CPU: "50000 100000", Memory: 64 << 20}

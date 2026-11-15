@@ -29,7 +29,6 @@ type cgroupController interface {
 
 var _ cgroupController = cgroups.Manager(nil)
 
-
 func (m Manager) CreateAndAttach(conf *Conf, pid int) error {
 	if pid <= 0 {
 		return fmt.Errorf("invalid pid %d", pid)
