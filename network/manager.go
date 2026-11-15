@@ -40,14 +40,14 @@ func gateway(subnet string) (string, error) {
 	return fmt.Sprintf("%s/24", gateway.String()), nil
 }
 
-func (m *Manager) Initialise() (string, error) {
+func (m *Manager) Initialise(ip string) (string, error) {
 	if err := m.initialiseNftables(); err != nil {
 		return "", err
 	}
 	if err := m.addNftChains(); err != nil {
 		return "", err
 	}
-	return AssignContIP()
+	return AssignContIP(ip)
 }
 
 func (m Manager) SetUp(pid int, ip string, ports []string) (spec.Network, error) {

@@ -18,18 +18,18 @@ if [[ $EUID -ne 0 ]]; then
 fi
 
 case "$(uname -m)" in
-    x86_64)
-        ARCH="amd64"
-        ;;
+    #x86_64)
+    #    ARCH="amd64"
+    #    ;;
     aarch64)
         ARCH="arm64"
         ;;
-    armv7l|armv6l)
-        ARCH="arm"
-        ;;
-    i386|i486|i586|i686)
-        ARCH="386"
-        ;;
+    #armv7l|armv6l)
+    #    ARCH="arm"
+    #    ;;
+    #i386|i486|i586|i686)
+    #    ARCH="386"
+    #    ;;
     *)
         echo "Error: Unsupported architecture: $(uname -m)"
         exit 1

@@ -3,6 +3,7 @@
 package cgroup
 
 import (
+	"errors"
 	"fmt"
 	"path/filepath"
 	"strconv"
@@ -19,43 +20,77 @@ type Conf struct {
 	CPU    string
 }
 
+type cgroupController interface {
+	Apply(pid int) error
+	Set(r *cgroups.Resources) error
+	AddPid(subsystem string, pid int) error
+	Destroy() error
+}
+
+var _ cgroupController = cgroups.Manager(nil)
+
 func (m Manager) CreateAndAttach(conf *Conf, pid int) error {
-	quota, period, err := parseCPUMax(conf.CPU)
+	if pid <= 0 {
+		return fmt.Errorf("invalid pid %d", pid)
+	}
+
+	resources, err := resourcesFromConf(conf)
 	if err != nil {
 		return err
 	}
 
-	path := filepath.Join(
-		m.Root,
-		fmt.Sprintf("ctrz-%d", pid),
-	)
-
-	config := &cgroups.Cgroup{
-		Resources: &cgroups.Resources{
-			CpuQuota:  quota,
-			CpuPeriod: period,
-			Memory:    conf.Memory,
-		},
-	}
-
 	cm, err := cgroupmanager.NewWithPaths(
-		config,
-		map[string]string{"": path},
+		&cgroups.Cgroup{Resources: resources},
+		map[string]string{"": m.cgroupPath(pid)},
 	)
 	if err != nil {
-		return fmt.Errorf("Error creating cgroup manager: %w\n", err)
+		return fmt.Errorf("creating cgroup manager: %w", err)
 	}
 
-	if err := cm.Apply(-1); err != nil {
-		return fmt.Errorf("Error creating cgroup: %w\n", err)
+	return applyAndAttach(cm, resources, pid)
+}
+
+func (m Manager) cgroupPath(pid int) string {
+	return filepath.Join(m.Root, fmt.Sprintf("ctrz-%d", pid))
+}
+
+func resourcesFromConf(conf *Conf) (*cgroups.Resources, error) {
+	if conf == nil {
+		return nil, errors.New("cgroup conf is nil")
 	}
 
-	if err := cm.Set(config.Resources); err != nil {
-		return fmt.Errorf("Error setting cgroup resources: %w\n", err)
+	quota, period, err := parseCPUMax(conf.CPU)
+	if err != nil {
+		return nil, err
 	}
 
-	if err := cm.AddPid("", pid); err != nil {
-		return fmt.Errorf("Error attaching process %d: %w\n", pid, err)
+	return &cgroups.Resources{
+		CpuQuota:  quota,
+		CpuPeriod: period,
+		Memory:    conf.Memory,
+	}, nil
+}
+
+func applyAndAttach(cm cgroupController, res *cgroups.Resources, pid int) (err error) {
+	defer func() {
+		if err == nil {
+			return
+		}
+		if derr := cm.Destroy(); derr != nil {
+			err = errors.Join(err, fmt.Errorf("removing cgroup after failure: %w", derr))
+		}
+	}()
+
+	if err = cm.Apply(-1); err != nil {
+		return fmt.Errorf("creating cgroup: %w", err)
+	}
+
+	if err = cm.Set(res); err != nil {
+		return fmt.Errorf("setting cgroup resources: %w", err)
+	}
+
+	if err = cm.AddPid("", pid); err != nil {
+		return fmt.Errorf("attaching process %d: %w", pid, err)
 	}
 
 	return nil

@@ -61,6 +61,7 @@ func init() {
 	runCmd.Flags().Bool("no-config", false, "Ignore the 'ctrz.yaml' file in the current directory")
 	runCmd.Flags().StringArrayP("env", "e", []string{}, "Pass custom environment variables in the from KEY=VALUE")
 	runCmd.Flags().Int64("memory", 0, "Limits the maximum memory (in MiB) of the container")
+	runCmd.Flags().String("force-ip", "", "Statically assign an IP to a container")
 	runCmd.MarkFlagsRequiredTogether("quota", "period")
 	runCmd.MarkFlagsMutuallyExclusive("config", "no-config")
 	runCmd.MarkFlagsMutuallyExclusive("cpu", "quota")
@@ -146,6 +147,14 @@ func getFlags(cmd *cobra.Command) (config.CLIOptions, string) {
 	}
 	if cmd.Flags().Changed("memory") {
 		c.MemoryLimit = &memory
+	}
+
+	ip, err := cmd.Flags().GetString("force-ip")
+	if err != nil {
+		log.Fatal("error retrieving --force-ip:", err)
+	}
+	if cmd.Flags().Changed("force-ip") {
+		c.IP = &ip
 	}
 
 	return c, conf

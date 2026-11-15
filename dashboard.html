@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>ctrz Dashboard</title>
+    <style>
+        body {
+            background: #171717;
+            color: #eeeeee;
+            font-family: verdana;
+            padding: 20px;
+        }
+
+        pre {
+            background: #252525;
+            padding: 20px;
+            border-radius: 8px;
+            overflow: auto;
+        }
+    </style>
+</head>
+<body>
+    <h1>ctrz Dashboard</h1>
+
+    <pre id="stats">Connecting...</pre>
+
+    <script>
+        const pathParts = window.location.pathname.split("/");
+        const containerName = decodeURIComponent(pathParts.pop());
+
+        const events = new EventSource(
+            "/ctrz/events/" + encodeURIComponent(containerName)
+        );
+
+        const output = document.getElementById("stats");
+
+        events.onmessage = function(event) {
+            const data = JSON.parse(event.data);
+            output.textContent = JSON.stringify(data, null, 2);
+        };
+
+        events.onerror = function() {
+            console.error("Connection interrupted. Reconnecting...");
+        };
+    </script>
+</body>
+</html>

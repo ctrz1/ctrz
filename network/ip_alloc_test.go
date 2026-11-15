@@ -41,7 +41,7 @@ type allocResult struct {
 func assignOrTimeout(d time.Duration) (allocResult, bool) {
 	ch := make(chan allocResult, 1)
 	go func() {
-		ip, err := AssignContIP()
+		ip, err := AssignContIP("")
 		ch <- allocResult{ip, err}
 	}()
 	select {
@@ -55,7 +55,7 @@ func assignOrTimeout(d time.Duration) (allocResult, bool) {
 // 10.200.1.0 is the network, .1 the bridge/gateway, .255 the broadcast address.
 func TestRandIPOnlyReturnsUsableHostAddresses(t *testing.T) {
 	for i := 0; i < 20000; i++ {
-		ip, _ := randIP(nil)
+		ip, _ := randIP(nil, "")
 		if !strings.HasPrefix(ip, "10.200.1.") {
 			t.Fatalf("randIP returned %q, outside 10.200.1.0/24", ip)
 		}
@@ -69,7 +69,7 @@ func TestAssignContIPNeverReusesAnAddress(t *testing.T) {
 	isolateState(t)
 	seen := map[string]bool{}
 	for i := 0; i < 100; i++ {
-		ip, err := AssignContIP()
+		ip, err := AssignContIP("")
 		if err != nil {
 			t.Fatalf("allocation %d: %v", i, err)
 		}
@@ -109,11 +109,11 @@ func TestAssignContIPReportsExhaustionInsteadOfHanging(t *testing.T) {
 // This passes today; it pins the behaviour so a rewrite of the allocator keeps it.
 func TestRemoveContIPReleasesOnlyThatAddress(t *testing.T) {
 	isolateState(t)
-	a, err := AssignContIP()
+	a, err := AssignContIP("")
 	if err != nil {
 		t.Fatal(err)
 	}
-	b, err := AssignContIP()
+	b, err := AssignContIP("")
 	if err != nil {
 		t.Fatal(err)
 	}

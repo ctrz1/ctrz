@@ -4,6 +4,7 @@
 package proc
 
 import (
+	"ctrz/cgroup"
 	"ctrz/spec"
 	"ctrz/utils"
 	"errors"
@@ -11,6 +12,8 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"strconv"
+	"strings"
 	"syscall"
 )
 
@@ -67,4 +70,52 @@ func Save(proc spec.ProcStats) (err error) {
 		return fmt.Errorf("Error adding process to PID file: %v\n", err)
 	}
 	return nil
+}
+
+func StartBackground(proc string) (int, error) {
+	utils.EnsureRoot()
+	dir, err := utils.CtrzStateDir()
+	if err != nil {
+		return 0, err
+	}
+
+	path := filepath.Join(dir, proc)
+
+	data, err := os.ReadFile(path)
+	if err == nil {
+		s := strings.Split(string(data), " ")
+		pid, err := strconv.Atoi(s[0])
+		if err != nil {
+			return 0, err
+		}
+		starttime, err := strconv.ParseUint(s[1], 10, 64)
+		if err != nil {
+			return 0, err
+		}
+		if IsProcActive(pid, starttime) {
+			return 0, fmt.Errorf("%s already running with PID: %d\n", proc, pid)
+		}
+	}
+
+	d := exec.Command("/proc/self/exe", fmt.Sprintf("__%s", proc))
+
+	if err := d.Start(); err != nil {
+		return 0, err
+	}
+	cgroupManager := cgroup.New()
+	if err := cgroupManager.CreateAndAttach(&cgroup.Conf{CPU: "100000 100000"}, d.Process.Pid); err != nil {
+		return 0, err
+	}
+	if err := os.MkdirAll(dir, 0o755); err != nil {
+		return 0, err
+	}
+	stat, err := ProcessStats(d.Process.Pid)
+	if err != nil {
+		return 0, err
+	}
+	daemonInfo := fmt.Sprintf("%d %d", d.Process.Pid, stat.Starttime)
+	if err := os.WriteFile(path, []byte(daemonInfo), 0o755); err != nil {
+		return 0, err
+	}
+	return d.Process.Pid, nil
 }

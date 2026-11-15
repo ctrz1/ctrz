@@ -11,6 +11,7 @@ import (
 	"ctrz/proc"
 	"ctrz/spec"
 	"ctrz/utils"
+	"errors"
 	"fmt"
 	"os"
 	"os/signal"
@@ -43,17 +44,24 @@ func (r Runtime) Run(cont *spec.ContainerSpec) error {
 		return err
 	}
 	sockPath := filepath.Join(dir, "ctrz.sock")
-	containerIP, err := r.NetworkManager.Initialise()
+	containerIP, err := r.NetworkManager.Initialise(cont.IP)
 	if err != nil {
 		return err
 	}
 	process := proc.Prepare(cont.Name, cont.Command)
-	if err := logging.ProcessLogs(cont.Name, process, cont.Detach); err != nil {
+	cleanup, err := logging.ProcessLogs(cont.Name, process, cont.Detach)
+	if err != nil {
 		return err
 	}
 	pid, err := proc.Run(process)
 	if err != nil {
+		_ = cleanup()
 		return err
+	}
+	if cont.Detach {
+		if err := cleanup(); err != nil {
+			return err
+		}
 	}
 	p, err := proc.ProcessStats(pid)
 	if err != nil {
@@ -109,7 +117,7 @@ func (r Runtime) Run(cont *spec.ContainerSpec) error {
 	}
 	if !cont.Detach {
 		if err := process.Wait(); err != nil {
-			return err
+			return errors.Join(err, cleanup())
 		}
 	}
 	if cont.Remove && !cont.Detach {
@@ -179,6 +187,13 @@ func (r Runtime) Clean() error {
 	if err != nil {
 		return err
 	}
+	if err := proc.CleanBackground("daemon"); err != nil {
+		return err
+	}
+	if err := proc.CleanBackground("dashboard"); err != nil {
+		return err
+	}
+
 	containers := getContainerFromPID(dir)
 	rm := &spec.Removal{
 		Force: true,

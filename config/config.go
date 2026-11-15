@@ -15,6 +15,7 @@ type CLIOptions struct {
 	Ports       *[]string `json:"ports"`
 	Environment *[]string `json:"environment"`
 	MemoryLimit *int64    `json:"memory-limit"`
+	IP          *string   `json:"force-ip"`
 }
 
 func Get(cont *CLIOptions, confPath string, skipConfig bool) (spec.ContainerSpec, error) {
